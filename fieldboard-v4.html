@@ -175,6 +175,7 @@ select option{background:var(--surface2);}
 .pt-dot.done-before{border-color:#7ec8a0;background:rgba(126,200,160,0.15);color:#7ec8a0;}
 .pt-dot.done-during{border-color:var(--accent2);background:rgba(247,168,79,0.15);color:var(--accent2);}
 .pt-dot.done-after{border-color:var(--success);background:rgba(79,202,135,0.15);color:var(--success);}
+.pt-dot.done-cert{border-color:#b088f7;background:rgba(176,136,247,0.15);color:#b088f7;}
 .pt-dot.active-stage{box-shadow:0 0 0 3px rgba(79,142,247,0.3);border-color:var(--accent);color:var(--accent);}
 .pt-dot .check{font-size:12px;}
 .pt-label{font-size:9px;color:var(--text3);font-weight:600;}
@@ -909,11 +910,22 @@ function renderJobs() {
               </div>
             </div>
           `;}).join('')}
+          ${(()=>{ // ➕ 추가: 완료확인서 도트(전/중/후 다음 4번째 도트, 후가 끝났을 때만 활성)
+            const certDone = job.certs&&job.certs.length;
+            const certNext = !certDone && hasShots('후');
+            const certClick = certDone ? `viewCerts('${job.id}')` : `loadJobForCert('${job.id}')`;
+            return `
+            <div class="pt-item">
+              <div class="pt-dot${certDone?' done-cert':''}${certNext?' active-stage':''}"
+                onclick="${certClick}">
+                ${certDone?'✓':certNext?'▶':'📄'}
+              </div>
+              <div class="pt-label${certDone?' done':''}">
+                확인서${certDone?' <span style="font-size:8px;color:var(--text3)">'+job.certs.length+'건</span>':''}
+              </div>
+            </div>`;
+          })()}
         </div>
-        ${hasShots('후') ? `
-        <button class="jab${job.certs&&job.certs.length?' already':''}" style="margin-top:8px;width:100%;" onclick="viewCerts('${job.id}')">
-          📄 완료확인서${job.certs&&job.certs.length?' ('+job.certs.length+'건) 보기':' 없음 — 촬영 화면에서 만들기'}
-        </button>` : ''}
       </div>
 
       <!-- 액션 버튼 행 -->
@@ -977,6 +989,29 @@ function confirmDeleteJob(){
   saveAll();
   renderJobs();
   showToast('🗑️ 삭제됨');
+}
+// 작업 불러오기 (완료확인서 작성용 — 단계 선택 없이 정보만 채움)
+function loadJobForCert(id) {
+  const job = A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  A.activeJobId = id;
+
+  document.getElementById('f-receipt').value  = job.receipt||'';
+  document.getElementById('f-complex').value  = job.complex||'';
+  document.getElementById('f-dong').value      = job.dong||'';
+  document.getElementById('f-ho').value        = job.ho||'';
+  document.getElementById('f-worktype').value  = job.worktype==='미입력'?'':job.worktype;
+  document.getElementById('f-location').value  = job.location||'';
+  document.getElementById('f-defect').value    = job.defect||'';
+  updateFname();
+
+  const banner = document.getElementById('active-banner');
+  document.getElementById('ab-name').textContent = job.title + (job.loc?' / '+job.loc:'');
+  document.getElementById('ab-stage').textContent = '완료확인서 작성 준비';
+  banner.classList.add('show');
+
+  goTab('shoot', document.querySelectorAll('.tab')[1]);
+  showToast('📄 '+job.title+' — 완료확인서(📄) 버튼을 눌러주세요');
 }
 function clearActive() {
   A.activeJobId=null;
