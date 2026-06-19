@@ -890,7 +890,7 @@ function renderJobs() {
                 ${d.done?'✓':d.isNext?'▶':d.s}
               </div>
               <div class="pt-label${d.done?' done':''}">
-                ${d.s}${d.done?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].length+'장 · '+lastShot.time+'</span>':''}
+                ${d.s}${d.done?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].length+'장</span>':''}
               </div>
             </div>
           `;}).join('')}
