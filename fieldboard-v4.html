@@ -591,7 +591,10 @@ select option{background:var(--surface2);}
 <div class="confirm-modal" id="sig-modal">
   <div class="confirm-box" style="max-width:340px;">
     <div class="confirm-title" id="sig-title">서명</div>
-    <input type="text" id="sig-name" placeholder="이름 입력" style="margin-bottom:10px;">
+    <div class="ir" style="margin-bottom:10px;">
+      <input type="text" id="sig-name" placeholder="이름 입력">
+      <button class="mic-mini" id="mic-signame" onclick="voiceForSigName()">🎤</button>
+    </div>
     <div class="sig-pad-wrap"><canvas id="sig-canvas"></canvas></div>
     <div class="confirm-btns">
       <button class="confirm-back" onclick="clearSigPad()">지우기</button>
@@ -1363,12 +1366,12 @@ async function drawCertificate(canvas, meta, sig){
   ctx.fillText('확인자(입주자)  :', x0+200, tenantY);
   if(sig&&sig.tenantName) ctx.fillText(sig.tenantName, x0+370, tenantY);
   ctx.fillText('(인)', x0+tableW-150, tenantY);
-  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, x0+tableW-110, tenantY-22, 80,44); }
+  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, x0+tableW-175, tenantY-25, 80,50); } // ✏️ 변경: (인) 글자에 겹치도록 위치 조정
 
   ctx.fillText('확인자(관리소)  :', x0+200, officeY);
   if(sig&&sig.officeName) ctx.fillText(sig.officeName, x0+370, officeY);
   ctx.fillText('(인)', x0+tableW-150, officeY);
-  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, x0+tableW-110, officeY-22, 80,44); }
+  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, x0+tableW-175, officeY-25, 80,50); } // ✏️ 변경: (인) 글자에 겹치도록 위치 조정
 }
 let _pendingCert=null;
 async function generateCertificate(){
@@ -1454,6 +1457,21 @@ function setupSigCanvas(){
   const end=()=>{ drawing=false; };
   canvas.onmousedown=start; canvas.onmousemove=move; canvas.onmouseup=end; canvas.onmouseleave=end;
   canvas.ontouchstart=start; canvas.ontouchmove=move; canvas.ontouchend=end;
+}
+function voiceForSigName(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-signame');
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 이름을 말씀하세요');
+  rec.onresult=(e)=>{ document.getElementById('sig-name').value=e.results[0][0].transcript.trim(); };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
 }
 function clearSigPad(){ setupSigCanvas(); }
 function cancelSigPad(){ document.getElementById('sig-modal').classList.remove('show'); }
