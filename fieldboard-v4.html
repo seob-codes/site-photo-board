@@ -64,7 +64,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .last-shot.show{display:block;}
 
 /* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
-.live-board{position:absolute;left:0;bottom:0;width:30%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
+.live-board{position:absolute;left:0;bottom:0;width:50%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
 .live-board.show{display:block;}
 .lb-row{display:flex;border-bottom:1px solid #000;overflow:hidden;}
 .lb-row:last-child{border-bottom:none;}
@@ -583,8 +583,8 @@ function compositeOverlay(canvas, cb) {
   if(!hasAny && !wmOn){ cb(); return; }
 
   const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['작업사항',null],['비고','']];
-  const tableW=W*0.3, labelW=tableW*0.34, valueW=tableW-labelW;
-  const rowH=H*0.1, x0=0, y0=H-ROWS.length*rowH; // ✏️ 변경: 보드판 높이 0.1로 조정
+  const tableW=W*0.5, labelW=tableW*0.34, valueW=tableW-labelW; // ✏️ 변경: 표 너비 0.3→0.5
+  const rowH=H*0.05, x0=0, y0=H-ROWS.length*rowH; // ✏️ 변경: 표 높이 0.1→0.05 // ✏️ 변경: 보드판 높이 0.1로 조정
   const fs=rowH*0.42;
 
   ctx.textBaseline='middle';
@@ -974,7 +974,7 @@ function syncLiveBoardSize(){
   const h=vid.clientHeight;
   if(!h) return;
   // 사진(캔버스)에 그리는 표와 똑같은 비율(H*0.024)로 줄 높이를 계산해서 라이브 화면도 동일하게 맞춤
-  const rowH=h*0.1, fs=rowH*0.42; // ✏️ 변경: 보드판 높이 0.1로 조정, 캔버스 쪽과 동일 비율 유지
+  const rowH=h*0.05, fs=rowH*0.42; // ✏️ 변경: 보드판 높이 0.05로 조정, 캔버스 쪽과 동일 비율 유지
   document.querySelectorAll('#live-board .lb-row').forEach(r=>{ r.style.height=rowH+'px'; });
   document.querySelectorAll('#live-board .lb-label, #live-board .lb-val').forEach(el=>{ el.style.fontSize=fs+'px'; });
 }
