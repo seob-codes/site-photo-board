@@ -952,13 +952,12 @@ function renderJobs() {
             ${d.isNext?'▶ '+label:label}
           </button>`;
         }).join('')}
-        ${(()=>{ // ➕ 추가: 액션 버튼 행에도 확인서 버튼 추가(도트 행과 동일한 로직)
+        ${(()=>{ // ✏️ 변경: 도트(보기)와 중복되지 않게, 버튼은 전/중/후 버튼처럼 항상 "추가로 만들러 가기" 역할로 통일
           const certDone = job.certs&&job.certs.length;
           const certNext = !certDone && hasShots('후');
-          const certClick = certDone ? `viewCerts('${job.id}')` : `loadJobForCert('${job.id}')`;
           const certCls = certNext ? 'jab next-up' : certDone ? 'jab already' : 'jab';
-          const certLabel = certDone ? '확인서✓' : '확인서';
-          return `<button class="${certCls}" onclick="${certClick}">${certNext?'▶ '+certLabel:certLabel}</button>`;
+          const certLabel = certDone ? '확인서✓ 추가' : '확인서';
+          return `<button class="${certCls}" onclick="loadJobForCert('${job.id}')">${certNext?'▶ '+certLabel:certLabel}</button>`;
         })()}
       </div>
     </div>`;
