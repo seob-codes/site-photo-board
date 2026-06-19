@@ -166,6 +166,8 @@ select option{background:var(--surface2);}
 .job-top{display:flex;align-items:center;padding:12px 13px 8px;gap:10px;}
 .job-del-btn{width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .job-del-btn:active{border-color:var(--danger);color:var(--danger);}
+.job-export-btn{width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.job-export-btn:active{border-color:var(--accent);}
 .job-meta{flex:1;min-width:0;}
 .job-title{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .job-loc{font-size:11px;color:var(--text3);margin-top:2px;}
@@ -927,6 +929,7 @@ function renderJobs() {
           <div class="job-loc">${job.loc||'위치 미입력'}</div>
           <div class="job-time">${formatTime(job.lastAt)} 마지막 촬영</div>
         </div>
+        <div class="job-export-btn" onclick="exportJob('${job.id}')" title="사진/확인서 공유">📤</div>
         <div class="job-del-btn" onclick="deleteJob('${job.id}')">🗑️</div>
       </div>
 
@@ -1013,6 +1016,36 @@ function loadJobWithStage(id, stage, stageKey) {
   showToast('📋 '+job.title+' — '+stage);
 }
 
+async function exportJob(jobId){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  const allShots=[];
+  STAGES.forEach(s=>{ (job.shots[s]||[]).forEach(sh=>allShots.push(sh)); });
+  (job.certs||[]).forEach(c=>allShots.push(c));
+  const withId=allShots.filter(s=>s.id);
+  if(!withId.length){ showToast('내보낼 사진/확인서가 없습니다','warn'); return; }
+
+  showToast('📤 내보낼 사진 준비 중...');
+  const files=[];
+  for(const s of withId){
+    const dataUrl=await getPhotoFromDB(s.id);
+    if(!dataUrl) continue;
+    try{
+      const res=await fetch(dataUrl);
+      const blob=await res.blob();
+      files.push(new File([blob], s.fileName||'photo.jpg', {type:'image/jpeg'}));
+    }catch(e){}
+  }
+  if(!files.length){ showToast('이미지를 불러오지 못했습니다','err'); return; }
+
+  if(navigator.canShare && navigator.canShare({files})){
+    try{
+      await navigator.share({files, title: job.title, text: job.title+(job.loc?' / '+job.loc:'')});
+    }catch(e){ /* 사용자가 공유를 취소한 경우 등 — 별도 처리 불필요 */ }
+  } else {
+    showToast('이 브라우저는 사진 공유를 지원하지 않습니다','err');
+  }
+}
 let _pendingDeleteId=null;
 function deleteJob(id){
   const job=A.jobs.find(j=>j.id===id);
