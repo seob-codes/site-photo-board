@@ -278,8 +278,9 @@ select option{background:var(--surface2);}
           <div class="lb-row"><div class="lb-label">단지명</div><div class="lb-val" id="lbv-complex"></div></div>
           <div class="lb-row"><div class="lb-label">동-호</div><div class="lb-val" id="lbv-dongho"></div></div>
           <div class="lb-row"><div class="lb-label">위치</div><div class="lb-val" id="lbv-location"></div></div>
+          <div class="lb-row"><div class="lb-label">하자내용</div><div class="lb-val" id="lbv-defect"></div></div>
           <div class="lb-row"><div class="lb-label">작업사항</div><div class="lb-val lb-stages" id="lbv-stage"></div></div>
-          <div class="lb-row"><div class="lb-label">비고</div><div class="lb-val" id="lbv-etc"></div></div>
+          <div class="lb-row"><div class="lb-label">물량</div><div class="lb-val" id="lbv-quantity"></div></div>
         </div>
       </div>
 
@@ -359,8 +360,16 @@ select option{background:var(--surface2);}
           <div class="ir">
             <input type="text" id="f-defect" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
+            <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-defect"></div>
+        </div>
+        <div class="ig">
+          <div class="il">물량</div>
+          <div class="ir">
+            <input type="text" id="f-quantity" oninput="updateFname()">
+            <button class="mic-mini" id="mic-quantity" onclick="voiceFor('quantity')">🎤</button>
+          </div>
         </div>
         <div class="ig">
           <div class="il">촬영 구분</div>
@@ -582,7 +591,9 @@ function compositeOverlay(canvas, cb) {
   const hasAny = complex||dongHo||location||stage;
   if(!hasAny && !wmOn){ cb(); return; }
 
-  const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['작업사항',null],['비고','']];
+  const defect=v('f-defect');
+  const quantity=v('f-quantity');
+  const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['하자내용',defect],['작업사항',null],['물량',quantity]];
   const tableW=W*0.36, labelW=tableW*0.34, valueW=tableW-labelW; // ✏️ 변경: 표 너비 10% 축소(0.4→0.36)
   const rowH=H*0.0675, x0=0, y0=H-ROWS.length*rowH; // ✏️ 변경: 표 높이 10% 축소(0.075→0.0675) // ✏️ 변경: 보드판 높이 0.1로 조정
   const fs=rowH*0.42;
@@ -959,12 +970,15 @@ function renderLiveBoard(){
   const complex=v('f-complex');
   const dongHo=[v('f-dong')&&v('f-dong')+'동',v('f-ho')&&v('f-ho')+'호'].filter(Boolean).join(' ');
   const location=v('f-location');
+  const defect=v('f-defect');
+  const quantity=v('f-quantity');
   const stage=A.currentStage;
 
   document.getElementById('lbv-complex').textContent=complex;
   document.getElementById('lbv-dongho').textContent=dongHo;
   document.getElementById('lbv-location').textContent=location;
-  document.getElementById('lbv-etc').textContent='';
+  document.getElementById('lbv-defect').textContent=defect;
+  document.getElementById('lbv-quantity').textContent=quantity;
   const stages=['전','중','후','점검'];
   document.getElementById('lbv-stage').innerHTML=stages.map(s=>`<span>${stage===s?'['+s+']':'[ ]'}</span>`).join('');
   syncLiveBoardSize();
@@ -982,7 +996,7 @@ function syncLiveBoardSize(){
 // ════════════════════════
 //  음성 인식 (항목 선택 후 그 항목만 말하기)
 // ════════════════════════
-const FIELD_LABELS={receipt:'접수번호',dongho:'동/호'};
+const FIELD_LABELS={receipt:'접수번호',dongho:'동/호',defect:'하자내용',quantity:'물량'};
 function voiceFor(field){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
@@ -1010,11 +1024,14 @@ function applyVoiceField(field, text){
     else if(nums&&nums.length>=2){ document.getElementById('f-dong').value=nums[0]; document.getElementById('f-ho').value=nums[1]; }
     else { showToast('"303 704"처럼 숫자 두 개를 말씀해주세요','warn'); return; }
     updateFname();
+  } else if(field==='defect' || field==='quantity'){
+    document.getElementById('f-'+field).value=text;
+    updateFname();
   }
   showToast('✅ "'+text+'" 입력됨');
 }
 function clearFields(){
-  ['receipt','complex','dong','ho','worktype','location','defect'].forEach(f=>{
+  ['receipt','complex','dong','ho','worktype','location','defect','quantity'].forEach(f=>{
     const i=document.getElementById('f-'+f);
     if(i) i.value='';
   });
