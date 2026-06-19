@@ -54,10 +54,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 .cam-controls{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:center;width:100%;margin-bottom:8px;}
 .cam-controls>*{margin:0 8px;}
-.shutter{width:60px;height:60px;border-radius:50%;background:#fff;border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
-.shutter:active{transform:scale(0.91);}
-.side-btn{width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.side-btn:active{border-color:var(--accent);}
+.shutter{width:62px;height:62px;border-radius:50%;background:linear-gradient(160deg,#ffffff,#dde2f0);border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 6px 18px rgba(79,142,247,0.4),0 2px 6px rgba(0,0,0,0.35),inset 0 1px 1px rgba(255,255,255,0.6);}
+.shutter:active{transform:scale(0.91);box-shadow:0 3px 10px rgba(79,142,247,0.35),inset 0 1px 1px rgba(255,255,255,0.6);}
+.side-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(160deg,#262b40,#1a1d2c);border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);}
+.side-btn:active{border-color:var(--accent);transform:scale(0.93);box-shadow:0 2px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);}
+
+/* ── 마지막 촬영 썸네일 ── */
+.last-shot{position:absolute;bottom:10px;left:10px;width:46px;height:46px;border-radius:10px;border:2px solid rgba(255,255,255,0.7);background:#000 center/cover no-repeat;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;display:none;z-index:2;}
+.last-shot.show{display:block;}
+.lightbox{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
+.lightbox.show{display:flex;}
+.lightbox img{max-width:100%;max-height:85vh;border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+.lightbox-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
 /* ── 음성 ── */
 .voice-bar{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:9px;}
@@ -248,6 +256,7 @@ select option{background:var(--surface2);}
           <div class="c c-tl"></div><div class="c c-tr"></div>
           <div class="c c-bl"></div><div class="c c-br"></div>
         </div>
+        <div class="last-shot" id="last-shot" onclick="openLightbox()"></div>
       </div>
 
       <!-- 미리보기 -->
@@ -410,6 +419,11 @@ select option{background:var(--surface2);}
 
 <div class="toast" id="toast"></div>
 
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+  <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+</div>
+
 <script>
 // ════════════════════════
 //  상태
@@ -417,6 +431,7 @@ select option{background:var(--surface2);}
 const A = {
   stream:null, facing:'environment',
   compositeDataUrl:null,
+  lastShotDataUrl:null,
   jobs:[],          // 찍으면서 자동 생성
   activeJobId:null,
   currentStage:'',
@@ -511,6 +526,22 @@ function compositeOverlay(canvas, cb) {
   cb();
 }
 function retake(){ A.compositeDataUrl=null; startCam(); }
+
+// ════════════════════════
+//  마지막 촬영 미리보기
+// ════════════════════════
+function saveLastShot(){
+  A.lastShotDataUrl = A.compositeDataUrl;
+  const thumb = document.getElementById('last-shot');
+  thumb.style.backgroundImage = `url(${A.lastShotDataUrl})`;
+  thumb.classList.add('show');
+}
+function openLightbox(){
+  if(!A.lastShotDataUrl) return;
+  document.getElementById('lightbox-img').src = A.lastShotDataUrl;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
 
 // ════════════════════════
 //  전/중/후 버튼
@@ -733,6 +764,7 @@ async function uploadDrive() {
       updateJobAfterSave(meta, stage, json.fileName||fileName);
       setBadge('ok','드라이브 연결됨');
       showToast('✅ 저장 완료');
+      saveLastShot();
       handleNextStage(stage);
       retake();
     } else throw new Error();
@@ -741,6 +773,7 @@ async function uploadDrive() {
     updateJobAfterSave(meta, stage, fileName);
     setBadge('fail','연결 실패');
     showToast('📴 로컬 저장됨','warn');
+    saveLastShot();
     handleNextStage(stage);
     retake();
   } finally {
