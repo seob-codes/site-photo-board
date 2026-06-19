@@ -328,7 +328,6 @@ select option{background:var(--surface2);}
           <div class="ir">
             <input type="text" id="f-complex" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('complex')">▾</button>
-            <button class="mic-mini" id="mic-complex" onclick="voiceFor('complex')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-complex"></div>
         </div>
@@ -345,7 +344,6 @@ select option{background:var(--surface2);}
           <div class="ir">
             <input type="text" id="f-worktype" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('worktype')">▾</button>
-            <button class="mic-mini" id="mic-worktype" onclick="voiceFor('worktype')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-worktype"></div>
         </div>
@@ -354,7 +352,6 @@ select option{background:var(--surface2);}
           <div class="ir">
             <input type="text" id="f-location" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('location')">▾</button>
-            <button class="mic-mini" id="mic-location" onclick="voiceFor('location')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-location"></div>
         </div>
@@ -363,7 +360,6 @@ select option{background:var(--surface2);}
           <div class="ir">
             <input type="text" id="f-defect" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
-            <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-defect"></div>
         </div>
@@ -374,7 +370,6 @@ select option{background:var(--surface2);}
             <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
             <button class="sb" id="sb-after"  onclick="setStage('후','after')">후</button>
             <button class="sb" id="sb-check"  onclick="setStage('점검','check')" style="font-size:11px;">점검</button>
-            <button class="mic-mini" id="mic-stage" onclick="voiceFor('stage')">🎤</button>
           </div>
           <input type="hidden" id="f-stage">
         </div>
@@ -977,7 +972,7 @@ function renderLiveBoard(){
 // ════════════════════════
 //  음성 인식 (항목 선택 후 그 항목만 말하기)
 // ════════════════════════
-const FIELD_LABELS={receipt:'접수번호',complex:'단지명',dongho:'동/호',worktype:'공종',location:'위치',defect:'하자내용',stage:'촬영구분'};
+const FIELD_LABELS={receipt:'접수번호',dongho:'동/호'};
 function voiceFor(field){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
@@ -1002,15 +997,6 @@ function applyVoiceField(field, text){
     const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
     if(m){ document.getElementById('f-dong').value=m[1]; document.getElementById('f-ho').value=m[2]; }
     else { showToast('"OO동 OO호" 형태로 다시 말씀해주세요','warn'); return; }
-    updateFname();
-  } else if(field==='stage'){
-    const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사']};
-    let matched=null;
-    for(const [val,kws] of Object.entries(stageMap)){ if(kws.some(k=>text.includes(k))){ matched=val; break; } }
-    if(matched) setStage(matched, STAGE_KEY[matched]);
-    else { showToast('전/중/후/점검 중 하나로 말씀해주세요','warn'); return; }
-  } else {
-    document.getElementById('f-'+field).value=text;
     updateFname();
   }
   showToast('✅ "'+text+'" 입력됨');
