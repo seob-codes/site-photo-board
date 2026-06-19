@@ -609,6 +609,7 @@ function shoot() {
     comp.getContext('2d').drawImage(snp,0,0);
     A.compositeDataUrl=snp.toDataURL('image/jpeg',0.92);
     saveToGallery(); // ➕ 추가: 업로드 성공/실패와 무관하게 촬영하면 항상 폰에도 저장
+    updateJobAfterSave(getFieldMeta(), A.currentStage, buildFname()); // ➕ 추가: 촬영 성공 시점에 바로 작업목록 반영(업로드 버튼을 눌러야 반영되던 것을 앞당김)
     hide('cam-wrap'); hide('cam-controls');
     show('preview-wrap'); show('after-shoot');
     updateFname();
@@ -913,8 +914,7 @@ async function uploadDrive() {
     });
     const json = await res.json();
     if(json.status==='ok') {
-      // ★ 작업 목록 자동 업데이트
-      updateJobAfterSave(meta, stage, json.fileName||fileName);
+      // ❌ 삭제됨: 작업목록 갱신은 이제 shoot() 촬영 시점에서 처리하므로 여기서는 호출하지 않음
       setBadge('ok','드라이브 연결됨');
       showToast('✅ 저장 완료');
       saveLastShot();
@@ -922,8 +922,7 @@ async function uploadDrive() {
       retake();
     } else throw new Error();
   } catch(e) {
-    // 오프라인도 목록엔 반영
-    updateJobAfterSave(meta, stage, fileName);
+    // ❌ 삭제됨: 작업목록 갱신은 이제 shoot() 촬영 시점에서 처리하므로 여기서는 호출하지 않음
     setBadge('fail','연결 실패');
     showToast('📴 로컬 저장됨','warn');
     saveLastShot();
