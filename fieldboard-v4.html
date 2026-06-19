@@ -86,23 +86,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .dd-item:active{background:rgba(79,142,247,0.15);}
 .dd-empty{padding:10px 12px;font-size:11px;color:var(--text3);}
 
-/* ── 음성 ── */
-.voice-btn.listening{border-color:var(--danger);background:rgba(247,95,95,0.1);color:var(--danger);animation:ring 1.2s infinite;}
+/* ── 음성 (항목별 마이크) ── */
+.mic-mini{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0 2px;vertical-align:middle;}
+.mic-mini.listening{color:var(--danger);animation:ring 1.2s infinite;}
 @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
-.voice-bubble{background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:var(--rs);padding:9px 12px;margin-bottom:9px;display:none;}
-.voice-bubble.show{display:block;}
-.vb-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:0.8px;margin-bottom:4px;}
-.vb-text{font-size:12px;color:var(--text2);}
-.vb-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.vb-tag{background:rgba(247,168,79,0.12);border:1px solid rgba(247,168,79,0.25);border-radius:20px;padding:2px 9px;font-size:10px;color:var(--accent2);}
 
 /* ── 입력 ── */
 .ig{margin-bottom:8px;}
 .il{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
-.il .vf{font-size:9px;color:var(--success);display:none;}
 .ir{display:flex;gap:6px;}
 input[type=text],input[type=date],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:all 0.2s;-webkit-appearance:none;}
-input.vf-field{border-color:var(--success);background:rgba(79,202,135,0.05);}
 input:focus,select:focus{border-color:var(--accent);}
 input::placeholder{color:var(--text3);}
 select option{background:var(--surface2);}
@@ -303,7 +296,6 @@ select option{background:var(--surface2);}
       <div class="cam-controls" id="cam-controls">
         <div class="side-btn" onclick="flipCam()">🔄</div>
         <div class="shutter" onclick="shoot()">📷</div>
-        <div class="side-btn voice-btn" id="voice-btn" onclick="toggleVoice()">🎤</div>
       </div>
 
       <!-- 저장/재촬영 -->
@@ -312,12 +304,6 @@ select option{background:var(--surface2);}
           <span>☁️</span> 구글 드라이브에 저장
         </button>
         <button class="retake-btn" onclick="retake()">↩ 다시 촬영</button>
-      </div>
-
-      <div class="voice-bubble" id="voice-bubble">
-        <div class="vb-label">🎤 인식</div>
-        <div class="vb-text" id="vb-text"></div>
-        <div class="vb-tags" id="vb-tags"></div>
       </div>
 
       <!-- 정보 입력 -->
@@ -331,11 +317,11 @@ select option{background:var(--surface2);}
           <div class="fname-val" id="fname-val">—</div>
         </div>
         <div class="ig">
-          <div class="il">접수번호</div>
+          <div class="il">접수번호 <button class="mic-mini" id="mic-receipt" onclick="voiceFor('receipt')">🎤</button></div>
           <input type="text" id="f-receipt" inputmode="numeric" oninput="formatReceipt(this)">
         </div>
         <div class="ig">
-          <div class="il">단지명 <span class="vf" id="lbl-complex">🎤</span></div>
+          <div class="il">단지명 <button class="mic-mini" id="mic-complex" onclick="voiceFor('complex')">🎤</button></div>
           <div class="ir">
             <input type="text" id="f-complex" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('complex')">▾</button>
@@ -343,14 +329,14 @@ select option{background:var(--surface2);}
           <div class="dd-panel" id="dd-complex"></div>
         </div>
         <div class="ig">
-          <div class="il">동 / 호 <span class="vf" id="lbl-loc">🎤</span></div>
+          <div class="il">동 / 호 <button class="mic-mini" id="mic-dongho" onclick="voiceFor('dongho')">🎤</button></div>
           <div class="ir">
             <input type="text" id="f-dong" oninput="updateFname()">
             <input type="text" id="f-ho" oninput="updateFname()">
           </div>
         </div>
         <div class="ig">
-          <div class="il">공종 <span class="vf" id="lbl-worktype">🎤</span></div>
+          <div class="il">공종 <button class="mic-mini" id="mic-worktype" onclick="voiceFor('worktype')">🎤</button></div>
           <div class="ir">
             <input type="text" id="f-worktype" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('worktype')">▾</button>
@@ -358,7 +344,7 @@ select option{background:var(--surface2);}
           <div class="dd-panel" id="dd-worktype"></div>
         </div>
         <div class="ig">
-          <div class="il">위치</div>
+          <div class="il">위치 <button class="mic-mini" id="mic-location" onclick="voiceFor('location')">🎤</button></div>
           <div class="ir">
             <input type="text" id="f-location" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('location')">▾</button>
@@ -366,7 +352,7 @@ select option{background:var(--surface2);}
           <div class="dd-panel" id="dd-location"></div>
         </div>
         <div class="ig">
-          <div class="il">하자내용 <span class="vf" id="lbl-defect">🎤</span></div>
+          <div class="il">하자내용 <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button></div>
           <div class="ir">
             <input type="text" id="f-defect" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
@@ -374,7 +360,7 @@ select option{background:var(--surface2);}
           <div class="dd-panel" id="dd-defect"></div>
         </div>
         <div class="ig">
-          <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
+          <div class="il">촬영 구분 <button class="mic-mini" id="mic-stage" onclick="voiceFor('stage')">🎤</button></div>
           <div class="stage-btns">
             <button class="sb" id="sb-before" onclick="setStage('전','before')">전</button>
             <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
@@ -515,7 +501,7 @@ const A = {
   jobs:[],          // 찍으면서 자동 생성
   activeJobId:null,
   currentStage:'',
-  recognition:null, listening:false,
+  listening:false,
   lists:{complex:[],worktype:[],location:[],defect:[]},
 };
 const CAM_RATIO = 2.174; // CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
@@ -980,66 +966,51 @@ function renderLiveBoard(){
 }
 
 // ════════════════════════
-//  음성 인식
+//  음성 인식 (항목 선택 후 그 항목만 말하기)
 // ════════════════════════
-function toggleVoice(){ if(A.listening) stopVoice(); else startVoice(); }
-function startVoice(){
+const FIELD_LABELS={receipt:'접수번호',complex:'단지명',dongho:'동/호',worktype:'공종',location:'위치',defect:'하자내용',stage:'촬영구분'};
+function voiceFor(field){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
-  A.recognition=new SR();
-  A.recognition.lang='ko-KR'; A.recognition.interimResults=true;
-  A.recognition.onstart=()=>{
-    A.listening=true;
-    document.getElementById('voice-btn').classList.add('listening');
-  };
-  A.recognition.onresult=(e)=>{
-    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
-    document.getElementById('vb-text').textContent='"'+t+'"';
-    document.getElementById('voice-bubble').classList.add('show');
-    if(e.results[0].isFinal) parseVoice(t);
-  };
-  A.recognition.onerror=(e)=>{ stopVoice(); showToast('마이크 오류','err'); };
-  A.recognition.onend=()=>stopVoice();
-  A.recognition.start();
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-'+field);
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 '+FIELD_LABELS[field]+' 말씀하세요');
+  rec.onresult=(e)=>{ applyVoiceField(field, e.results[0][0].transcript.trim()); };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
 }
-function stopVoice(){
-  A.listening=false;
-  if(A.recognition) try{A.recognition.stop();}catch(e){}
-  document.getElementById('voice-btn').classList.remove('listening');
-}
-function parseVoice(text){
-  const filled=[];
-  const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사']};
-  for(const [val,kws] of Object.entries(stageMap)){
-    if(kws.some(k=>text.includes(k))){ setStage(val,STAGE_KEY[val]); filled.push('구분:'+val); break; }
+function applyVoiceField(field, text){
+  if(field==='receipt'){
+    const el=document.getElementById('f-receipt');
+    el.value=text.replace(/\D/g,'').slice(0,13);
+    formatReceipt(el);
+  } else if(field==='dongho'){
+    const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
+    if(m){ document.getElementById('f-dong').value=m[1]; document.getElementById('f-ho').value=m[2]; }
+    else { showToast('"OO동 OO호" 형태로 다시 말씀해주세요','warn'); return; }
+    updateFname();
+  } else if(field==='stage'){
+    const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사']};
+    let matched=null;
+    for(const [val,kws] of Object.entries(stageMap)){ if(kws.some(k=>text.includes(k))){ matched=val; break; } }
+    if(matched) setStage(matched, STAGE_KEY[matched]);
+    else { showToast('전/중/후/점검 중 하나로 말씀해주세요','warn'); return; }
+  } else {
+    document.getElementById('f-'+field).value=text;
+    updateFname();
   }
-  const dongHo=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
-  if(dongHo){ document.getElementById('f-dong').value=dongHo[1]; document.getElementById('f-ho').value=dongHo[2]; markVF('loc'); filled.push('동/호:'+dongHo[1]+'동 '+dongHo[2]+'호'); }
-  const complexP=/([가-힣]+\s*(아파트|단지|빌라|건물))/;
-  const cm=text.match(complexP);
-  if(cm){ document.getElementById('f-complex').value=cm[1]; markVF('complex'); filled.push('단지명:'+cm[1]); }
-  let t2=text;
-  Object.values(stageMap).flat().forEach(k=>t2=t2.replace(k,''));
-  if(dongHo) t2=t2.replace(dongHo[0],'');
-  if(cm) t2=t2.replace(cm[0],'');
-  t2=t2.replace(/[은는이가을를에서으로도만]/g,' ').replace(/\s{2,}/g,' ').trim();
-  if(t2.length>=2){ document.getElementById('f-defect').value=t2; markVF('defect'); filled.push('하자내용:'+t2); }
-  document.getElementById('vb-tags').innerHTML=filled.map(f=>`<div class="vb-tag">${f}</div>`).join('');
-  updateFname();
-  showToast('🎤 '+filled.length+'개 입력');
-}
-function markVF(f){
-  const i=document.getElementById('f-'+f), l=document.getElementById('lbl-'+f);
-  if(i) i.classList.add('vf-field');
-  if(l) l.style.display='inline';
+  showToast('✅ "'+text+'" 입력됨');
 }
 function clearFields(){
   ['receipt','complex','dong','ho','worktype','location','defect'].forEach(f=>{
-    const i=document.getElementById('f-'+f), l=document.getElementById('lbl-'+f);
-    if(i){i.value='';i.classList.remove('vf-field');}
-    if(l) l.style.display='none';
+    const i=document.getElementById('f-'+f);
+    if(i) i.value='';
   });
-  document.getElementById('voice-bubble').classList.remove('show');
   A.currentStage='';
   ['before','during','after','check'].forEach(k=>{ const b=document.getElementById('sb-'+k); if(b) b.className='sb'; });
   updateFname(); showToast('초기화');
