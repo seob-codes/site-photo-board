@@ -88,6 +88,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .confirm-go{background:var(--accent);color:#fff;border-color:var(--accent);}
 .confirm-back{background:var(--surface2);color:var(--text2);}
 
+/* ── 단계별 촬영 사진 뷰어(스와이프) ── */
+.shot-viewer{position:fixed;inset:0;background:rgba(5,6,10,0.95);display:none;align-items:center;justify-content:center;z-index:1100;}
+.shot-viewer.show{display:flex;}
+.sv-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1;}
+.sv-counter{position:absolute;top:20px;left:18px;font-size:13px;font-weight:700;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;}
+.sv-stage{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+.sv-img-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px 16px;touch-action:pan-y;}
+.sv-img-wrap img{max-width:100%;max-height:100%;border-radius:var(--rs);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+.sv-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.sv-prev{left:8px;}
+.sv-next{right:8px;}
+
 /* ── 목록 드롭다운 (촬영 탭) ── */
 .dd-toggle{width:38px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
 .dd-panel{display:none;margin-top:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);max-height:180px;overflow-y:auto;}
@@ -520,6 +532,18 @@ select option{background:var(--surface2);}
   </div>
 </div>
 
+<!-- ➕ 추가: 같은 단계로 찍은 여러 장을 좌우로 넘겨보는 뷰어 -->
+<div class="shot-viewer" id="shot-viewer">
+  <div class="sv-close" onclick="closeShotViewer()">✕</div>
+  <div class="sv-counter" id="sv-counter">1/1</div>
+  <div class="sv-stage" id="sv-stage-time"></div>
+  <div class="sv-img-wrap" id="sv-img-wrap">
+    <img id="sv-img" src="" alt="">
+  </div>
+  <button class="sv-nav sv-prev" onclick="shotViewerMove(-1)">‹</button>
+  <button class="sv-nav sv-next" onclick="shotViewerMove(1)">›</button>
+</div>
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <div class="lightbox-close" onclick="closeLightbox()">✕</div>
   <img id="lightbox-img" src="" onclick="event.stopPropagation()">
@@ -609,7 +633,9 @@ function shoot() {
     comp.getContext('2d').drawImage(snp,0,0);
     A.compositeDataUrl=snp.toDataURL('image/jpeg',0.92);
     saveToGallery(); // ➕ 추가: 업로드 성공/실패와 무관하게 촬영하면 항상 폰에도 저장
-    updateJobAfterSave(getFieldMeta(), A.currentStage, buildFname()); // ➕ 추가: 촬영 성공 시점에 바로 작업목록 반영(업로드 버튼을 눌러야 반영되던 것을 앞당김)
+    const shotId='shot_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); // ➕ 추가: 이 사진을 IndexedDB에서 찾기 위한 고유 id
+    savePhotoToDB(shotId, A.compositeDataUrl); // ➕ 추가: 다음날 다시 봐도 사진이 남아있도록 IndexedDB에 원본(보드판 포함) 저장
+    updateJobAfterSave(getFieldMeta(), A.currentStage, buildFname(), shotId); // ➕ 추가: 촬영 성공 시점에 바로 작업목록 반영(업로드 버튼을 눌러야 반영되던 것을 앞당김)
     hide('cam-wrap'); hide('cam-controls');
     show('preview-wrap'); show('after-shoot');
     updateFname();
@@ -715,12 +741,39 @@ function setStage(val, key) {
 // ════════════════════════
 //  ★ 작업 목록 (자동 생성) ★
 // ════════════════════════
-function makeJobKey(complex, dong, ho, worktype) {
-  return [complex,dong,ho,worktype].map(s=>(s||'').trim().toLowerCase()).join('__');
+// ════════════════════════
+//  사진 원본 저장소 (IndexedDB) — localStorage는 용량이 작아 사진(이미지)은 못 담으므로
+//  브라우저 내장 데이터베이스인 IndexedDB에 따로 저장해서 다음날 다시 봐도 남아있게 함
+// ════════════════════════
+let _photoDB=null;
+function openPhotoDB(){
+  if(_photoDB) return Promise.resolve(_photoDB);
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open('fb4_photos',1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore('shots',{keyPath:'id'}); };
+    req.onsuccess=()=>{ _photoDB=req.result; resolve(_photoDB); };
+    req.onerror=()=>reject(req.error);
+  });
+}
+function savePhotoToDB(id, dataUrl){
+  openPhotoDB().then(db=>{
+    db.transaction('shots','readwrite').objectStore('shots').put({id, dataUrl});
+  }).catch(()=>{});
+}
+function getPhotoFromDB(id){
+  return openPhotoDB().then(db=>new Promise((resolve)=>{
+    const req=db.transaction('shots','readonly').objectStore('shots').get(id);
+    req.onsuccess=()=>resolve(req.result?req.result.dataUrl:null);
+    req.onerror=()=>resolve(null);
+  }));
+}
+function makeJobKey(receipt) {
+  // ✏️ 변경: 묶는 기준을 단지명+동+호+공종 → 접수번호로 변경(같은 접수번호=같은 작업)
+  return (receipt||'').trim().toLowerCase();
 }
 function getOrCreateJob(meta) {
-  // 단지명+동+호+공종이 같으면 기존 것 반환, 없으면 새로 생성
-  const key = makeJobKey(meta.complex, meta.dong, meta.ho, meta.worktype);
+  // 접수번호가 같으면 기존 것 반환, 없으면 새로 생성
+  const key = makeJobKey(meta.receipt);
   let job = A.jobs.find(j=>j.key===key);
   if(!job) {
     job = {
@@ -748,9 +801,11 @@ function getOrCreateJob(meta) {
 
 function renderJobs() {
   const list = document.getElementById('job-list');
-  document.getElementById('job-count').textContent = A.jobs.length+'건';
+  // ✏️ 변경: 전/중/후 다 끝난 작업은 목록에서 제외(데이터는 A.jobs에 그대로 보존, 화면 표시만 숨김)
+  const visibleJobs = A.jobs.filter(job=>!STAGES.every(s=>job.shots[s]&&job.shots[s].length));
+  document.getElementById('job-count').textContent = visibleJobs.length+'건';
 
-  if(!A.jobs.length) {
+  if(!visibleJobs.length) {
     list.innerHTML=`<div class="empty-state">
       <div class="empty-icon">📋</div>
       <div class="empty-text">촬영 탭에서 사진을 찍으면<br>여기에 자동으로 쌓입니다</div>
@@ -758,25 +813,26 @@ function renderJobs() {
     return;
   }
 
-  list.innerHTML = A.jobs.map(job=>{
-    const allDone = STAGES.every(s=>job.shots[s]);
+  list.innerHTML = visibleJobs.map(job=>{
+    const hasShots = s=>job.shots[s]&&job.shots[s].length; // ➕ 추가: 배열 형태(여러 장)인지 확인하는 헬퍼
+    const allDone = STAGES.every(s=>hasShots(s));
     const isActive = A.activeJobId===job.id;
 
     // 진행 상태 계산
-    const doneCount = STAGES.filter(s=>job.shots[s]).length;
+    const doneCount = STAGES.filter(s=>hasShots(s)).length;
     const pct = Math.round(doneCount/STAGES.length*100);
 
     // 전/중/후 각 도트 상태
     const dots = STAGES.map((s,i)=>{
       const key = STAGE_KEY[s];
-      const done = job.shots[s];
-      const isNext = !done && STAGES.slice(0,i).every(ps=>job.shots[ps]);
+      const done = hasShots(s);
+      const isNext = !done && STAGES.slice(0,i).every(ps=>hasShots(ps));
       return {s, key, done, isNext};
     });
 
     // 연결선 색상 (앞 단계가 완료됐을 때)
-    const line1Color = job.shots['전'] ? STAGE_COLORS.before : '';
-    const line2Color = job.shots['중'] ? STAGE_COLORS.during : '';
+    const line1Color = hasShots('전') ? STAGE_COLORS.before : '';
+    const line2Color = hasShots('중') ? STAGE_COLORS.during : '';
 
     return `
     <div class="job-card${allDone?' is-done':''}${isActive?' is-active':''}" id="jc-${job.id}">
@@ -803,17 +859,20 @@ function renderJobs() {
         </div>
         <!-- 도트 -->
         <div class="progress-track">
-          ${dots.map(d=>`
+          ${dots.map(d=>{
+            const lastShot = d.done ? job.shots[d.s][job.shots[d.s].length-1] : null;
+            const dotClick = d.done ? `viewShots('${job.id}','${d.s}')` : `loadJobWithStage('${job.id}','${d.s}','${d.key}')`;
+            return `
             <div class="pt-item">
               <div class="pt-dot${d.done?' done-'+d.key:''}${d.isNext?' active-stage':''}"
-                onclick="loadJobWithStage('${job.id}','${d.s}','${d.key}')">
+                onclick="${dotClick}">
                 ${d.done?'✓':d.isNext?'▶':d.s}
               </div>
               <div class="pt-label${d.done?' done':''}">
-                ${d.s}${d.done&&job.shots[d.s].time?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].time+'</span>':''}
+                ${d.s}${d.done?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].length+'장 · '+lastShot.time+'</span>':''}
               </div>
             </div>
-          `).join('')}
+          `;}).join('')}
         </div>
       </div>
 
@@ -861,6 +920,44 @@ function clearActive() {
   A.activeJobId=null;
   document.getElementById('active-banner').classList.remove('show');
 }
+
+// ════════════════════════
+//  단계별 촬영 사진 뷰어 (좌우로 넘겨보기)
+// ════════════════════════
+const SV={shots:[],idx:0};
+function viewShots(jobId, stage){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job||!job.shots[stage]||!job.shots[stage].length) return;
+  SV.shots=job.shots[stage];
+  SV.idx=SV.shots.length-1; // 가장 최근 사진부터 보여줌
+  document.getElementById('shot-viewer').classList.add('show');
+  renderShotViewer();
+}
+function closeShotViewer(){ document.getElementById('shot-viewer').classList.remove('show'); }
+function shotViewerMove(dir){
+  SV.idx=Math.max(0,Math.min(SV.shots.length-1,SV.idx+dir));
+  renderShotViewer();
+}
+function renderShotViewer(){
+  const shot=SV.shots[SV.idx];
+  document.getElementById('sv-counter').textContent=(SV.idx+1)+'/'+SV.shots.length;
+  document.getElementById('sv-stage-time').textContent=shot.time+' · '+shot.fileName;
+  const img=document.getElementById('sv-img');
+  img.src='';
+  if(shot.id){
+    getPhotoFromDB(shot.id).then(url=>{ if(url) img.src=url; });
+  }
+}
+(function(){
+  // 스와이프(터치 좌우 넘기기) 지원
+  let sx=0;
+  const wrap=document.getElementById('sv-img-wrap');
+  wrap.addEventListener('touchstart',e=>{ sx=e.touches[0].clientX; });
+  wrap.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>40) shotViewerMove(dx<0?1:-1);
+  });
+})();
 
 // 아이콘 자동 선택
 function getJobIcon(title) {
@@ -934,17 +1031,19 @@ async function uploadDrive() {
   }
 }
 
-function updateJobAfterSave(meta, stage, fileName) {
+function updateJobAfterSave(meta, stage, fileName, shotId) {
   const job = getOrCreateJob(meta);
   const now  = new Date();
   const timeStr = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   if(stage) {
     job.seq[stage] = (job.seq[stage]||0)+1;
-    job.shots[stage] = { time: timeStr, fileName };
+    if(!Array.isArray(job.shots[stage])) job.shots[stage]=[]; // ✏️ 변경: 단계당 1장만 저장하던 것을 여러 장 배열로 변경
+    job.shots[stage].push({ time: timeStr, fileName, id: shotId||null }); // ➕ 추가: id로 IndexedDB에 저장된 실제 사진 이미지를 나중에 불러옴
   }
   job.lastAt = now.toISOString();
   A.activeJobId = job.id;
   renderJobs();
+  saveAll(); // ➕ 추가: 촬영 시점에 바로 저장(이전엔 uploadDrive 쪽 finally에서만 저장됐음)
 }
 
 function handleNextStage(stage) {
@@ -969,7 +1068,7 @@ function getFieldMeta() {
 }
 function nextSeqFor(meta, stage) {
   if(!stage) return 1;
-  const key = makeJobKey(meta.complex, meta.dong, meta.ho, meta.worktype);
+  const key = makeJobKey(meta.receipt);
   const job = A.jobs.find(j=>j.key===key);
   return (job && job.seq[stage] ? job.seq[stage] : 0) + 1;
 }
@@ -1185,10 +1284,22 @@ function loadAll(){
     if(c.folder) document.getElementById('s-folder').value=c.folder;
     if(c.org) document.getElementById('s-org').value=c.org;
     A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
+    migrateJobs(); // ➕ 추가: 예전 데이터(단지+동+호+공종 키, 단계당 1장 객체)를 새 구조(접수번호 키, 배열)로 변환
     const savedLists=JSON.parse(localStorage.getItem('fb4_lists')||'{}');
     ['complex','worktype','location','defect'].forEach(k=>{ A.lists[k]=savedLists[k]||[]; });
   }catch(e){}
   renderLists();
+}
+function migrateJobs(){
+  A.jobs.forEach(job=>{
+    job.key = makeJobKey(job.receipt); // 키 기준을 접수번호로 재계산(접수번호 같은 작업끼리 다시 묶이게)
+    STAGES.forEach(s=>{
+      if(job.shots[s] && !Array.isArray(job.shots[s])){
+        job.shots[s] = [{ ...job.shots[s], id:null }]; // 이전엔 이미지 자체를 저장 안 했어서 id=null(뷰어에서는 빈 화면)
+      }
+    });
+  });
+  saveAll();
 }
 function copyCode(){ navigator.clipboard.writeText(document.getElementById('gas-code').textContent).then(()=>showToast('📋 코드 복사됨')).catch(()=>showToast('직접 선택해서 복사','warn')); }
 
