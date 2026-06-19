@@ -293,16 +293,31 @@ select option{background:var(--surface2);}
       <div class="card">
         <div class="card-label">사진 정보</div>
         <div class="ig">
-          <div class="il">작업/공사명 <span class="vf" id="lbl-title">🎤</span></div>
-          <input type="text" id="f-title" placeholder="예) 타일작업, 현관도어록 교체" oninput="updateFname()">
+          <div class="il">접수번호</div>
+          <input type="text" id="f-receipt" placeholder="예) 260121-44-00714" oninput="updateFname()">
         </div>
         <div class="ig">
-          <div class="il">위치 <span class="vf" id="lbl-loc">🎤</span></div>
-          <input type="text" id="f-loc" placeholder="예) 3동 201호" oninput="updateFname()">
+          <div class="il">단지명 <span class="vf" id="lbl-complex">🎤</span></div>
+          <input type="text" id="f-complex" placeholder="예) 문산당동3" oninput="updateFname()">
         </div>
         <div class="ig">
-          <div class="il">촬영자 <span class="vf" id="lbl-person">🎤</span></div>
-          <input type="text" id="f-person" placeholder="성명" oninput="updateFname()">
+          <div class="il">동 / 호 <span class="vf" id="lbl-loc">🎤</span></div>
+          <div class="ir">
+            <input type="text" id="f-dong" placeholder="예) 303" oninput="updateFname()">
+            <input type="text" id="f-ho" placeholder="예) 704" oninput="updateFname()">
+          </div>
+        </div>
+        <div class="ig">
+          <div class="il">공종 <span class="vf" id="lbl-worktype">🎤</span></div>
+          <input type="text" id="f-worktype" placeholder="예) 도배장판" oninput="updateFname()">
+        </div>
+        <div class="ig">
+          <div class="il">위치</div>
+          <input type="text" id="f-location" placeholder="예) 거실,주방" oninput="updateFname()">
+        </div>
+        <div class="ig">
+          <div class="il">하자내용 <span class="vf" id="lbl-defect">🎤</span></div>
+          <input type="text" id="f-defect" placeholder="예) 도배공사" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
@@ -314,10 +329,6 @@ select option{background:var(--surface2);}
             <button class="sb" id="sb-done"   onclick="setStage('완료','done')"  style="font-size:11px;">완료</button>
           </div>
           <input type="hidden" id="f-stage">
-        </div>
-        <div class="ig">
-          <div class="il">날짜</div>
-          <input type="date" id="f-date" oninput="updateFname()">
         </div>
         <div class="fname-preview">
           <div class="fname-label">저장 파일명</div>
@@ -381,15 +392,6 @@ select option{background:var(--surface2);}
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">조직명 (워터마크)</label>
           <input type="text" id="s-org" placeholder="예) ○○건설" oninput="saveSet()">
         </div>
-        <div class="ig">
-          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">파일명 형식</label>
-          <select id="s-fmt" onchange="saveSet();updateFname()">
-            <option value="date_title_stage">날짜_작업명_구분</option>
-            <option value="date_person_title_stage">날짜_촬영자_작업명_구분</option>
-            <option value="title_loc_date_stage">작업명_위치_날짜_구분</option>
-            <option value="custom">나중에 설정</option>
-          </select>
-        </div>
       </div>
       <div class="card">
         <div class="card-label">옵션</div>
@@ -432,7 +434,6 @@ const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#
 // ════════════════════════
 //  초기화
 // ════════════════════════
-document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
 loadAll(); startCam(); updateFname(); updateDriveBadge(); renderJobs();
 
 // ════════════════════════
@@ -483,10 +484,12 @@ function compositeOverlay(canvas, cb) {
   const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
   const rows=[];
   const v=id=>document.getElementById(id).value;
-  if(v('f-title'))  rows.push(['작업명',v('f-title')]);
-  if(v('f-loc'))    rows.push(['위치',v('f-loc')]);
-  if(v('f-person')) rows.push(['담당자',v('f-person')]);
-  if(v('f-date'))   rows.push(['날짜',v('f-date')]);
+  if(v('f-receipt'))  rows.push(['접수번호',v('f-receipt')]);
+  if(v('f-complex'))  rows.push(['단지명',v('f-complex')]);
+  if(v('f-dong')||v('f-ho')) rows.push(['동/호',[v('f-dong')&&v('f-dong')+'동',v('f-ho')&&v('f-ho')+'호'].filter(Boolean).join(' ')]);
+  if(v('f-worktype')) rows.push(['공종',v('f-worktype')]);
+  if(v('f-location')) rows.push(['위치',v('f-location')]);
+  if(v('f-defect'))    rows.push(['하자내용',v('f-defect')]);
   if(A.currentStage) rows.push(['구분',A.currentStage]);
   const org=document.getElementById('s-org').value;
   const wmOn=document.getElementById('t-wm').classList.contains('on');
@@ -532,21 +535,33 @@ function setStage(val, key) {
 // ════════════════════════
 //  ★ 작업 목록 (자동 생성) ★
 // ════════════════════════
-function getOrCreateJob(title, loc) {
-  // 같은 작업명+위치가 있으면 기존 것 반환, 없으면 새로 생성
-  const key = (title+'__'+loc).toLowerCase();
+function makeJobKey(complex, dong, ho, worktype) {
+  return [complex,dong,ho,worktype].map(s=>(s||'').trim().toLowerCase()).join('__');
+}
+function getOrCreateJob(meta) {
+  // 단지명+동+호+공종이 같으면 기존 것 반환, 없으면 새로 생성
+  const key = makeJobKey(meta.complex, meta.dong, meta.ho, meta.worktype);
   let job = A.jobs.find(j=>j.key===key);
   if(!job) {
     job = {
       id: 'j'+Date.now(),
       key,
-      title: title||'미입력',
-      loc:   loc||'',
+      title: meta.worktype||'미입력',
+      loc:   [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' '),
+      complex: meta.complex||'', dong: meta.dong||'', ho: meta.ho||'',
+      worktype: meta.worktype||'', location: meta.location||'', defect: meta.defect||'', receipt: meta.receipt||'',
       shots: {},   // { '전':{ time, fileName }, '중':..., '후':... }
+      seq: {},     // { '전':1, '중':1, ... } 같은 구분 재촬영 시 증가
       createdAt: new Date().toISOString(),
       lastAt: new Date().toISOString(),
     };
     A.jobs.unshift(job);
+  } else {
+    job.title = meta.worktype||job.title;
+    job.loc = [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
+    job.complex=meta.complex||job.complex; job.dong=meta.dong||job.dong; job.ho=meta.ho||job.ho;
+    job.worktype=meta.worktype||job.worktype; job.location=meta.location||job.location;
+    job.defect=meta.defect||job.defect; job.receipt=meta.receipt||job.receipt;
   }
   return job;
 }
@@ -642,8 +657,13 @@ function loadJobWithStage(id, stage, stageKey) {
   if(!job) return;
   A.activeJobId = id;
 
-  document.getElementById('f-title').value  = job.title==='미입력'?'':job.title;
-  document.getElementById('f-loc').value    = job.loc||'';
+  document.getElementById('f-receipt').value  = job.receipt||'';
+  document.getElementById('f-complex').value  = job.complex||'';
+  document.getElementById('f-dong').value      = job.dong||'';
+  document.getElementById('f-ho').value        = job.ho||'';
+  document.getElementById('f-worktype').value  = job.worktype==='미입력'?'':job.worktype;
+  document.getElementById('f-location').value  = job.location||'';
+  document.getElementById('f-defect').value    = job.defect||'';
   setStage(stage, stageKey);
   updateFname();
 
@@ -703,8 +723,7 @@ async function uploadDrive() {
   btn.disabled=true; btn.innerHTML='<span>⏳</span> 업로드 중...';
   setBadge('uploading','업로드 중...');
 
-  const title    = document.getElementById('f-title').value||'미입력';
-  const loc      = document.getElementById('f-loc').value||'';
+  const meta = getFieldMeta();
   const stage    = A.currentStage;
   const fileName = buildFname();
 
@@ -716,18 +735,18 @@ async function uploadDrive() {
     const json = await res.json();
     if(json.status==='ok') {
       // ★ 작업 목록 자동 업데이트
-      updateJobAfterSave(title, loc, stage, json.fileName||fileName);
+      updateJobAfterSave(meta, stage, json.fileName||fileName);
       setBadge('ok','드라이브 연결됨');
       showToast('✅ 저장 완료');
-      handleNextStage(title, loc, stage);
+      handleNextStage(stage);
       retake();
     } else throw new Error();
   } catch(e) {
     // 오프라인도 목록엔 반영
-    updateJobAfterSave(title, loc, stage, fileName);
+    updateJobAfterSave(meta, stage, fileName);
     setBadge('fail','연결 실패');
     showToast('📴 로컬 저장됨','warn');
-    handleNextStage(title, loc, stage);
+    handleNextStage(stage);
     retake();
   } finally {
     btn.disabled=false; btn.innerHTML='<span>☁️</span> 구글 드라이브에 저장';
@@ -735,17 +754,20 @@ async function uploadDrive() {
   }
 }
 
-function updateJobAfterSave(title, loc, stage, fileName) {
-  const job = getOrCreateJob(title, loc);
+function updateJobAfterSave(meta, stage, fileName) {
+  const job = getOrCreateJob(meta);
   const now  = new Date();
   const timeStr = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  if(stage) job.shots[stage] = { time: timeStr, fileName };
+  if(stage) {
+    job.seq[stage] = (job.seq[stage]||0)+1;
+    job.shots[stage] = { time: timeStr, fileName };
+  }
   job.lastAt = now.toISOString();
   A.activeJobId = job.id;
   renderJobs();
 }
 
-function handleNextStage(title, loc, stage) {
+function handleNextStage(stage) {
   if(!document.getElementById('t-next').classList.contains('on')) return;
   const idx = STAGES.indexOf(stage);
   if(idx>=0 && idx<STAGES.length-1) {
@@ -758,21 +780,33 @@ function handleNextStage(title, loc, stage) {
 // ════════════════════════
 //  파일명
 // ════════════════════════
-function buildFname() {
-  const fmt=document.getElementById('s-fmt').value;
-  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
-  const title=cl(document.getElementById('f-title').value);
-  const loc=cl(document.getElementById('f-loc').value);
-  const person=cl(document.getElementById('f-person').value);
-  const stage=cl(A.currentStage);
-  const date=(document.getElementById('f-date').value||'').replace(/-/g,'');
-  const map={
-    'date_title_stage':[date,title,stage],
-    'date_person_title_stage':[date,person,title,stage],
-    'title_loc_date_stage':[title,loc,date,stage],
-    'custom':[date,title,stage],
+function getFieldMeta() {
+  const v=id=>document.getElementById(id).value.trim();
+  return {
+    receipt:v('f-receipt'), complex:v('f-complex'), dong:v('f-dong'), ho:v('f-ho'),
+    worktype:v('f-worktype'), location:v('f-location'), defect:v('f-defect'),
   };
-  return (map[fmt]||[date,title,stage]).filter(Boolean).join('_')+'.jpg';
+}
+function nextSeqFor(meta, stage) {
+  if(!stage) return 1;
+  const key = makeJobKey(meta.complex, meta.dong, meta.ho, meta.worktype);
+  const job = A.jobs.find(j=>j.key===key);
+  return (job && job.seq[stage] ? job.seq[stage] : 0) + 1;
+}
+function buildFname() {
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const meta = getFieldMeta();
+  const receipt=cl(meta.receipt);
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const worktype=cl(meta.worktype);
+  const location=cl(meta.location);
+  const defect=cl(meta.defect);
+  const stage=A.currentStage;
+  const base=[receipt,complex,dong,ho,worktype,location,defect].filter(Boolean).join('_');
+  const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
+  return [base,stagePart].filter(Boolean).join('_')+'.jpg';
 }
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); }
 
@@ -814,22 +848,17 @@ function parseVoice(text){
   for(const [val,kws] of Object.entries(stageMap)){
     if(kws.some(k=>text.includes(k))){ setStage(val,STAGE_KEY[val]); filled.push('구분:'+val); break; }
   }
-  const nm=text.match(/([가-힣]{2,4})(씨|님|대리|과장|팀장|부장|소장)?(?=\s|$)/);
-  if(nm){
-    const sw=['시공','준공','착공','점검','완료','타일','도배','배관','전기'];
-    if(!sw.some(w=>nm[1].includes(w))){ document.getElementById('f-person').value=nm[1]; markVF('person'); filled.push('담당자:'+nm[1]); }
-  }
-  const locP=[/(\d+동\s*\d*호?)/,/(\d+층)/,/([가-힣]+\s*(아파트|단지|빌라|건물))/];
-  for(const p of locP){
-    const m=text.match(p);
-    if(m){ const cur=document.getElementById('f-loc').value; document.getElementById('f-loc').value=cur?cur+' '+m[1]:m[1]; markVF('loc'); filled.push('위치:'+m[1]); break; }
-  }
+  const dongHo=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
+  if(dongHo){ document.getElementById('f-dong').value=dongHo[1]; document.getElementById('f-ho').value=dongHo[2]; markVF('loc'); filled.push('동/호:'+dongHo[1]+'동 '+dongHo[2]+'호'); }
+  const complexP=/([가-힣]+\s*(아파트|단지|빌라|건물))/;
+  const cm=text.match(complexP);
+  if(cm){ document.getElementById('f-complex').value=cm[1]; markVF('complex'); filled.push('단지명:'+cm[1]); }
   let t2=text;
   Object.values(stageMap).flat().forEach(k=>t2=t2.replace(k,''));
-  if(nm) t2=t2.replace(nm[0],'');
-  locP.forEach(p=>t2=t2.replace(p,''));
+  if(dongHo) t2=t2.replace(dongHo[0],'');
+  if(cm) t2=t2.replace(cm[0],'');
   t2=t2.replace(/[은는이가을를에서으로도만]/g,' ').replace(/\s{2,}/g,' ').trim();
-  if(t2.length>=2){ document.getElementById('f-title').value=t2; markVF('title'); filled.push('작업명:'+t2); }
+  if(t2.length>=2){ document.getElementById('f-defect').value=t2; markVF('defect'); filled.push('하자내용:'+t2); }
   document.getElementById('vb-tags').innerHTML=filled.map(f=>`<div class="vb-tag">${f}</div>`).join('');
   updateFname();
   showToast('🎤 '+filled.length+'개 입력');
@@ -840,7 +869,7 @@ function markVF(f){
   if(l) l.style.display='inline';
 }
 function clearFields(){
-  ['title','loc','person'].forEach(f=>{
+  ['receipt','complex','dong','ho','worktype','location','defect'].forEach(f=>{
     const i=document.getElementById('f-'+f), l=document.getElementById('lbl-'+f);
     if(i){i.value='';i.classList.remove('vf-field');}
     if(l) l.style.display='none';
@@ -869,7 +898,7 @@ async function testConn(){
 //  설정 저장
 // ════════════════════════
 function saveSet(){
-  try{ localStorage.setItem('fb4_cfg',JSON.stringify({url:document.getElementById('s-url').value,folder:document.getElementById('s-folder').value,org:document.getElementById('s-org').value,fmt:document.getElementById('s-fmt').value})); }catch(e){}
+  try{ localStorage.setItem('fb4_cfg',JSON.stringify({url:document.getElementById('s-url').value,folder:document.getElementById('s-folder').value,org:document.getElementById('s-org').value})); }catch(e){}
   updateDriveBadge(); updateFname();
 }
 function saveAll(){
@@ -881,7 +910,6 @@ function loadAll(){
     if(c.url) document.getElementById('s-url').value=c.url;
     if(c.folder) document.getElementById('s-folder').value=c.folder;
     if(c.org) document.getElementById('s-org').value=c.org;
-    if(c.fmt) document.getElementById('s-fmt').value=c.fmt;
     A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
   }catch(e){}
 }
