@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>현장보드판</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3348;
+  --accent:#4f8ef7;--accent2:#f7a84f;--danger:#f75f5f;--success:#4fca87;
+  --text:#e8ecf5;--text2:#8b94b2;--text3:#5a6480;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+.header{padding:10px 16px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.app-title{font-size:17px;font-weight:700;letter-spacing:-0.3px;}
+.app-title span{color:var(--accent);}
+.drive-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);cursor:pointer;}
+.drive-badge.ok{background:rgba(79,202,135,0.12);border-color:var(--success);color:var(--success);}
+.drive-badge.uploading{background:rgba(79,142,247,0.12);border-color:var(--accent);color:var(--accent);animation:blink 1s infinite;}
+.drive-badge.fail{background:rgba(247,95,95,0.12);border-color:var(--danger);color:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.tabs{display:flex;padding:0 14px;gap:5px;margin-bottom:8px;flex-shrink:0;}
+.tab{flex:1;padding:7px 2px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:var(--rs);font-size:11px;font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;}
+
+.screens{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;overflow-y:auto;padding:0 14px 80px;display:none;}
+.screen.active{display:block;}
+
+/* ── 카드 ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;}
+.card-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:9px;}
+
+/* ── 카메라 ── */
+.cam-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;background:#000;margin-bottom:8px;}
+#live-video{width:100%;display:block;max-height:46vw;object-fit:cover;}
+#snap-canvas{display:none;}
+.corners{position:absolute;inset:0;pointer-events:none;}
+.c{position:absolute;width:16px;height:16px;}
+.c-tl{top:6px;left:6px;border-top:2px solid var(--accent);border-left:2px solid var(--accent);}
+.c-tr{top:6px;right:6px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);}
+.c-bl{bottom:6px;left:6px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent);}
+.c-br{bottom:6px;right:6px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent);}
+.preview-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;margin-bottom:8px;display:none;}
+
+.cam-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px;}
+.shutter{width:60px;height:60px;border-radius:50%;background:#fff;border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.shutter:active{transform:scale(0.91);}
+.side-btn{width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.side-btn:active{border-color:var(--accent);}
+
+/* ── 음성 ── */
+.voice-bar{display:flex;gap:8px;align-items:center;margin-bottom:9px;}
+.voice-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 14px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text2);transition:all 0.2s;}
+.voice-btn.listening{border-color:var(--danger);background:rgba(247,95,95,0.1);color:var(--danger);animation:ring 1.2s infinite;}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
+.voice-bubble{background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:var(--rs);padding:9px 12px;margin-bottom:9px;display:none;}
+.voice-bubble.show{display:block;}
+.vb-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:0.8px;margin-bottom:4px;}
+.vb-text{font-size:12px;color:var(--text2);}
+.vb-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.vb-tag{background:rgba(247,168,79,0.12);border:1px solid rgba(247,168,79,0.25);border-radius:20px;padding:2px 9px;font-size:10px;color:var(--accent2);}
+
+/* ── 입력 ── */
+.ig{margin-bottom:8px;}
+.il{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+.il .vf{font-size:9px;color:var(--success);display:none;}
+.ir{display:flex;gap:6px;}
+input[type=text],input[type=date],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:all 0.2s;-webkit-appearance:none;}
+input.vf-field{border-color:var(--success);background:rgba(79,202,135,0.05);}
+input:focus,select:focus{border-color:var(--accent);}
+input::placeholder{color:var(--text3);}
+select option{background:var(--surface2);}
+
+/* ── 전중후 버튼 ── */
+.stage-btns{display:flex;gap:6px;}
+.sb{flex:1;padding:9px 4px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:var(--rs);font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;transition:all 0.18s;text-align:center;}
+.sb.s-before{border-color:#7ec8a0;background:rgba(126,200,160,0.12);color:#7ec8a0;}
+.sb.s-during{border-color:var(--accent2);background:rgba(247,168,79,0.12);color:var(--accent2);}
+.sb.s-after{border-color:var(--success);background:rgba(79,202,135,0.12);color:var(--success);}
+.sb.s-check{border-color:var(--accent);background:rgba(79,142,247,0.12);color:var(--accent);}
+.sb.s-done{border-color:#b088f7;background:rgba(176,136,247,0.12);color:#b088f7;}
+
+/* ── 파일명 미리보기 ── */
+.fname-preview{background:var(--surface2);border-radius:var(--rs);padding:8px 10px;margin-top:4px;}
+.fname-label{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:0.8px;margin-bottom:2px;}
+.fname-val{font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;word-break:break-all;}
+
+/* ── 업로드 버튼 ── */
+.upload-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:7px;}
+.upload-btn:active{background:#3a7ae8;}
+.upload-btn:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed;}
+.retake-btn{width:100%;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;font-size:13px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
+
+/* ════════════════════════════
+   ★★★ 작업 목록 (자동 생성) ★★★
+════════════════════════════ */
+.job-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.job-list-title{font-size:14px;font-weight:700;}
+.job-count-badge{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+
+/* 작업 카드 */
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:border-color 0.2s;}
+.job-card:active{border-color:var(--accent);}
+.job-card.is-active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(79,142,247,0.3);}
+.job-card.is-done{border-color:rgba(79,202,135,0.3);}
+
+.job-top{display:flex;align-items:center;padding:12px 13px 8px;gap:10px;}
+.job-icon-wrap{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.job-meta{flex:1;min-width:0;}
+.job-title{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-loc{font-size:11px;color:var(--text3);margin-top:2px;}
+.job-time{font-size:9px;color:var(--text3);margin-top:1px;font-family:'JetBrains Mono',monospace;}
+
+/* ★ 진행 상태 바 ★ */
+.job-progress{padding:0 13px 12px;}
+.progress-track{display:flex;gap:5px;margin-bottom:6px;}
+.pt-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.pt-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);transition:all 0.2s;position:relative;}
+.pt-dot.done-before{border-color:#7ec8a0;background:rgba(126,200,160,0.15);color:#7ec8a0;}
+.pt-dot.done-during{border-color:var(--accent2);background:rgba(247,168,79,0.15);color:var(--accent2);}
+.pt-dot.done-after{border-color:var(--success);background:rgba(79,202,135,0.15);color:var(--success);}
+.pt-dot.active-stage{box-shadow:0 0 0 3px rgba(79,142,247,0.3);border-color:var(--accent);color:var(--accent);}
+.pt-dot .check{font-size:12px;}
+.pt-label{font-size:9px;color:var(--text3);font-weight:600;}
+.pt-label.done{color:var(--text2);}
+
+/* 진행 연결선 */
+.progress-line{display:flex;align-items:center;padding:0 14px;margin-bottom:8px;}
+.pl-seg{flex:1;height:2px;background:var(--border);border-radius:1px;}
+.pl-seg.filled-before{background:#7ec8a0;}
+.pl-seg.filled-during{background:var(--accent2);}
+.pl-seg.filled-after{background:var(--success);}
+
+/* 불러오기 버튼 */
+.job-action-row{display:flex;gap:6px;padding:0 13px 12px;}
+.jab{flex:1;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);color:var(--accent);border-radius:var(--rs);padding:8px 6px;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-align:center;transition:all 0.18s;}
+.jab:active{background:rgba(79,142,247,0.2);}
+.jab.next-up{background:var(--accent);color:#fff;border-color:var(--accent);}
+.jab.already{background:var(--surface2);color:var(--text3);border-color:var(--border);}
+.jab.already:active{background:var(--surface2);}
+
+/* 완료 배지 */
+.done-badge{display:inline-block;background:rgba(79,202,135,0.12);border:1px solid rgba(79,202,135,0.3);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;}
+
+/* 빈 상태 */
+.empty-state{text-align:center;padding:50px 0 20px;}
+.empty-icon{font-size:44px;opacity:0.3;margin-bottom:12px;}
+.empty-text{font-size:13px;color:var(--text3);line-height:1.7;}
+
+/* ── 현재 작업 배너 ── */
+.active-banner{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:var(--rs);padding:9px 12px;margin-bottom:8px;display:none;align-items:center;justify-content:space-between;}
+.active-banner.show{display:flex;}
+.ab-info{}
+.ab-sub{font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.8px;margin-bottom:2px;}
+.ab-name{font-size:13px;font-weight:700;}
+.ab-stage{font-size:11px;color:var(--text2);margin-top:1px;}
+.ab-clear{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;}
+
+
+/* ── 설정 ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.set-row:last-child{border-bottom:none;}
+.set-name{font-size:13px;font-weight:500;}
+.set-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.toggle{width:40px;height:22px;background:var(--border);border-radius:11px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.2s;}
+.toggle.on::after{left:21px;}
+.drive-setup{background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.2);border-radius:var(--r);padding:13px;margin-bottom:9px;}
+.ds-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:5px;}
+.ds-desc{font-size:11px;color:var(--text2);line-height:1.7;}
+.step{display:inline-block;background:var(--accent);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 7px;margin-right:4px;}
+.gas-box{background:#0a0c14;border-radius:var(--rs);padding:10px;overflow-x:auto;margin-bottom:8px;}
+.gas-box pre{font-size:9px;color:#7ec8a0;font-family:'JetBrains Mono',monospace;white-space:pre;line-height:1.6;}
+
+/* ── 토스트 ── */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--success);color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:all 0.25s;white-space:nowrap;z-index:999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.warn{background:var(--accent2);}
+.toast.err{background:var(--danger);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div class="app-title">현장 <span>보드판</span></div>
+    <div class="drive-badge" id="drive-badge" onclick="goTab('settings',null)">드라이브 미연결</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" onclick="goTab('jobs',this)">📋 작업목록</button>
+    <button class="tab active" onclick="goTab('shoot',this)">📷 촬영</button>
+    <button class="tab" onclick="goTab('settings',this)">⚙️ 설정</button>
+  </div>
+
+  <div class="screens">
+
+    <!-- ══════════════════════════
+         ★ 작업 목록 탭 ★
+    ══════════════════════════ -->
+    <div class="screen" id="tab-jobs">
+      <div class="job-list-header">
+        <div class="job-list-title">작업 목록</div>
+        <div class="job-count-badge" id="job-count">0건</div>
+      </div>
+      <div id="job-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">
+            촬영 탭에서 사진을 찍으면<br>
+            여기에 자동으로 쌓입니다
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════
+         촬영 탭
+    ══════════════════════════ -->
+    <div class="screen active" id="tab-shoot">
+
+      <!-- 현재 작업 배너 -->
+      <div class="active-banner" id="active-banner">
+        <div class="ab-info">
+          <div class="ab-sub">불러온 작업</div>
+          <div class="ab-name" id="ab-name">—</div>
+          <div class="ab-stage" id="ab-stage"></div>
+        </div>
+        <button class="ab-clear" onclick="clearActive()">✕</button>
+      </div>
+
+      <!-- 카메라 -->
+      <div class="cam-wrap" id="cam-wrap">
+        <video id="live-video" autoplay playsinline muted></video>
+        <canvas id="snap-canvas" style="display:none"></canvas>
+        <div class="corners">
+          <div class="c c-tl"></div><div class="c c-tr"></div>
+          <div class="c c-bl"></div><div class="c c-br"></div>
+        </div>
+      </div>
+
+      <!-- 미리보기 -->
+      <div class="preview-wrap" id="preview-wrap">
+        <canvas id="composite-canvas" style="width:100%;border-radius:var(--r);display:block;"></canvas>
+        <div class="corners">
+          <div class="c c-tl"></div><div class="c c-tr"></div>
+          <div class="c c-bl"></div><div class="c c-br"></div>
+        </div>
+      </div>
+
+      <!-- 촬영 컨트롤 -->
+      <div class="cam-controls" id="cam-controls">
+        <div class="side-btn" onclick="flipCam()">🔄</div>
+        <div class="shutter" onclick="shoot()">📷</div>
+        <div class="side-btn" id="voice-side" onclick="toggleVoice()">🎤</div>
+      </div>
+
+      <!-- 저장/재촬영 -->
+      <div id="after-shoot" style="display:none;margin-bottom:8px;">
+        <button class="upload-btn" id="upload-btn" onclick="uploadDrive()">
+          <span>☁️</span> 구글 드라이브에 저장
+        </button>
+        <button class="retake-btn" onclick="retake()">↩ 다시 촬영</button>
+      </div>
+
+      <!-- 음성 버튼 -->
+      <div class="voice-bar">
+        <div class="voice-btn" id="voice-btn" onclick="toggleVoice()">
+          <span>🎤</span>
+          <span id="mic-label" style="font-size:12px;font-weight:600;">말하기 — 자동 입력</span>
+        </div>
+        <div class="side-btn" onclick="clearFields()" style="font-size:14px;">🗑️</div>
+      </div>
+
+      <div class="voice-bubble" id="voice-bubble">
+        <div class="vb-label">🎤 인식</div>
+        <div class="vb-text" id="vb-text"></div>
+        <div class="vb-tags" id="vb-tags"></div>
+      </div>
+
+      <!-- 정보 입력 -->
+      <div class="card">
+        <div class="card-label">사진 정보</div>
+        <div class="ig">
+          <div class="il">작업/공사명 <span class="vf" id="lbl-title">🎤</span></div>
+          <input type="text" id="f-title" placeholder="예) 타일작업, 현관도어록 교체" oninput="updateFname()">
+        </div>
+        <div class="ig">
+          <div class="il">위치 <span class="vf" id="lbl-loc">🎤</span></div>
+          <input type="text" id="f-loc" placeholder="예) 3동 201호" oninput="updateFname()">
+        </div>
+        <div class="ig">
+          <div class="il">촬영자 <span class="vf" id="lbl-person">🎤</span></div>
+          <input type="text" id="f-person" placeholder="성명" oninput="updateFname()">
+        </div>
+        <div class="ig">
+          <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
+          <div class="stage-btns">
+            <button class="sb" id="sb-before" onclick="setStage('전','before')">전</button>
+            <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
+            <button class="sb" id="sb-after"  onclick="setStage('후','after')">후</button>
+            <button class="sb" id="sb-check"  onclick="setStage('점검','check')" style="font-size:11px;">점검</button>
+            <button class="sb" id="sb-done"   onclick="setStage('완료','done')"  style="font-size:11px;">완료</button>
+          </div>
+          <input type="hidden" id="f-stage">
+        </div>
+        <div class="ig">
+          <div class="il">날짜</div>
+          <input type="date" id="f-date" oninput="updateFname()">
+        </div>
+        <div class="fname-preview">
+          <div class="fname-label">저장 파일명</div>
+          <div class="fname-val" id="fname-val">—</div>
+        </div>
+      </div>
+
+    </div><!-- /shoot -->
+
+    <!-- ══ 설정 ══ -->
+    <div class="screen" id="tab-settings">
+      <div class="drive-setup">
+        <div class="ds-title">☁️ 구글 드라이브 연동</div>
+        <div class="ds-desc">
+          <span class="step">1</span>아래 코드 복사<br>
+          <span class="step">2</span><a href="https://script.google.com" target="_blank" style="color:var(--accent)">script.google.com</a> → 새 프로젝트 → 붙여넣기<br>
+          <span class="step">3</span>배포 → 웹앱 → 액세스: 모든 사용자<br>
+          <span class="step">4</span>배포 URL 아래 입력
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Apps Script 코드</div>
+        <div class="gas-box">
+          <pre id="gas-code">function doPost(e) {
+  var data     = JSON.parse(e.postData.contents);
+  var imgData  = data.image;
+  var fileName = data.fileName;
+  var folderID = data.folderId;
+  var bytes = Utilities.base64Decode(
+    imgData.replace(/^data:image\/\w+;base64,/, '')
+  );
+  var blob   = Utilities.newBlob(bytes, 'image/jpeg', fileName);
+  var folder = DriveApp.getFolderById(folderID);
+  var file   = folder.createFile(blob);
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status:'ok', fileId:file.getId(), fileName:file.getName()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+        <button class="retake-btn" onclick="copyCode()">📋 코드 복사</button>
+      </div>
+      <div class="card">
+        <div class="card-label">드라이브 연동</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">Apps Script 배포 URL</label>
+          <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/..." oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">저장 폴더 ID</label>
+          <div class="ir">
+            <input type="text" id="s-folder" placeholder="드라이브 폴더 URL 마지막 부분" oninput="saveSet()">
+            <button style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);padding:8px 10px;border-radius:var(--rs);font-size:15px;cursor:pointer;white-space:nowrap;flex-shrink:0;" onclick="testConn()" id="test-btn">🔗</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">파일명 설정</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">조직명 (워터마크)</label>
+          <input type="text" id="s-org" placeholder="예) ○○건설" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">파일명 형식</label>
+          <select id="s-fmt" onchange="saveSet();updateFname()">
+            <option value="date_title_stage">날짜_작업명_구분</option>
+            <option value="date_person_title_stage">날짜_촬영자_작업명_구분</option>
+            <option value="title_loc_date_stage">작업명_위치_날짜_구분</option>
+            <option value="custom">나중에 설정</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">옵션</div>
+        <div class="set-row">
+          <div><div class="set-name">워터마크</div><div class="set-desc">사진 하단 조직명</div></div>
+          <div class="toggle on" id="t-wm" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="set-row">
+          <div><div class="set-name">촬영 즉시 자동 업로드</div><div class="set-desc">버튼 없이 바로 전송</div></div>
+          <div class="toggle" id="t-auto" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="set-row">
+          <div><div class="set-name">저장 후 구분 자동 진행</div><div class="set-desc">전→중→후 자동 이동</div></div>
+          <div class="toggle on" id="t-next" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════
+//  상태
+// ════════════════════════
+const A = {
+  stream:null, facing:'environment',
+  compositeDataUrl:null,
+  jobs:[],          // 찍으면서 자동 생성
+  activeJobId:null,
+  currentStage:'',
+  recognition:null, listening:false,
+};
+const STAGES = ['전','중','후'];
+const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check','완료':'done'};
+const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#4f8ef7',done:'#b088f7'};
+
+// ════════════════════════
+//  초기화
+// ════════════════════════
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+loadAll(); startCam(); updateFname(); updateDriveBadge(); renderJobs();
+
+// ════════════════════════
+//  탭
+// ════════════════════════
+function goTab(name, el) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='jobs') renderJobs();
+}
+
+// ════════════════════════
+//  카메라
+// ════════════════════════
+async function startCam() {
+  try {
+    if(A.stream) A.stream.getTracks().forEach(t=>t.stop());
+    A.stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:A.facing,width:{ideal:1920},height:{ideal:1080}}, audio:false
+    });
+    document.getElementById('live-video').srcObject = A.stream;
+    show('cam-wrap'); hide('preview-wrap');
+    show('cam-controls'); hide('after-shoot');
+  } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
+}
+function flipCam(){ A.facing=A.facing==='environment'?'user':'environment'; startCam(); }
+
+function shoot() {
+  const vid=document.getElementById('live-video');
+  const snp=document.getElementById('snap-canvas');
+  snp.width=vid.videoWidth||1280; snp.height=vid.videoHeight||720;
+  snp.getContext('2d').drawImage(vid,0,0);
+  compositeOverlay(snp,()=>{
+    const comp=document.getElementById('composite-canvas');
+    comp.width=snp.width; comp.height=snp.height;
+    comp.getContext('2d').drawImage(snp,0,0);
+    A.compositeDataUrl=snp.toDataURL('image/jpeg',0.92);
+    hide('cam-wrap'); hide('cam-controls');
+    show('preview-wrap'); show('after-shoot');
+    updateFname();
+    if(document.getElementById('t-auto').classList.contains('on')) uploadDrive();
+  });
+}
+
+function compositeOverlay(canvas, cb) {
+  const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  const rows=[];
+  const v=id=>document.getElementById(id).value;
+  if(v('f-title'))  rows.push(['작업명',v('f-title')]);
+  if(v('f-loc'))    rows.push(['위치',v('f-loc')]);
+  if(v('f-person')) rows.push(['담당자',v('f-person')]);
+  if(v('f-date'))   rows.push(['날짜',v('f-date')]);
+  if(A.currentStage) rows.push(['구분',A.currentStage]);
+  const org=document.getElementById('s-org').value;
+  const wmOn=document.getElementById('t-wm').classList.contains('on');
+  if(!rows.length&&!wmOn){cb();return;}
+  const lh=H*0.037, pad=H*0.017;
+  const boxH=rows.length*lh+pad*2+(wmOn&&org?lh*0.7:0);
+  ctx.fillStyle='rgba(8,10,18,0.88)';
+  ctx.fillRect(0,H-boxH,W,boxH);
+  const fs=lh*0.6;
+  rows.forEach(([k,vv],i)=>{
+    const y=H-boxH+pad+lh*(i+0.72);
+    ctx.font=`600 ${fs}px JetBrains Mono,monospace`;
+    ctx.fillStyle='#f7a84f'; ctx.fillText(k,W*0.03,y);
+    ctx.font=`${fs}px JetBrains Mono,monospace`;
+    ctx.fillStyle='#fff';
+    const txt=vv.length>28?vv.slice(0,28)+'…':vv;
+    ctx.fillText(txt,W-ctx.measureText(txt).width-W*0.03,y);
+  });
+  if(wmOn&&org){
+    ctx.font=`500 ${fs*0.72}px Noto Sans KR,sans-serif`;
+    ctx.fillStyle='rgba(255,255,255,0.25)';
+    ctx.textAlign='center'; ctx.fillText(org,W/2,H-pad*0.5); ctx.textAlign='left';
+  }
+  cb();
+}
+function retake(){ A.compositeDataUrl=null; startCam(); }
+
+// ════════════════════════
+//  전/중/후 버튼
+// ════════════════════════
+function setStage(val, key) {
+  A.currentStage=val;
+  document.getElementById('f-stage').value=val;
+  ['before','during','after','check','done'].forEach(k=>{
+    const el=document.getElementById('sb-'+k);
+    if(el) el.className='sb'+(k===key?' s-'+k:'');
+  });
+  // 배너 구분 업데이트
+  document.getElementById('ab-stage').textContent = val ? '촬영 구분: '+val : '';
+  updateFname();
+}
+
+// ════════════════════════
+//  ★ 작업 목록 (자동 생성) ★
+// ════════════════════════
+function getOrCreateJob(title, loc) {
+  // 같은 작업명+위치가 있으면 기존 것 반환, 없으면 새로 생성
+  const key = (title+'__'+loc).toLowerCase();
+  let job = A.jobs.find(j=>j.key===key);
+  if(!job) {
+    job = {
+      id: 'j'+Date.now(),
+      key,
+      title: title||'미입력',
+      loc:   loc||'',
+      shots: {},   // { '전':{ time, fileName }, '중':..., '후':... }
+      createdAt: new Date().toISOString(),
+      lastAt: new Date().toISOString(),
+    };
+    A.jobs.unshift(job);
+  }
+  return job;
+}
+
+function renderJobs() {
+  const list = document.getElementById('job-list');
+  document.getElementById('job-count').textContent = A.jobs.length+'건';
+
+  if(!A.jobs.length) {
+    list.innerHTML=`<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">촬영 탭에서 사진을 찍으면<br>여기에 자동으로 쌓입니다</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = A.jobs.map(job=>{
+    const allDone = STAGES.every(s=>job.shots[s]);
+    const isActive = A.activeJobId===job.id;
+
+    // 진행 상태 계산
+    const doneCount = STAGES.filter(s=>job.shots[s]).length;
+    const pct = Math.round(doneCount/STAGES.length*100);
+
+    // 전/중/후 각 도트 상태
+    const dots = STAGES.map((s,i)=>{
+      const key = STAGE_KEY[s];
+      const done = job.shots[s];
+      const isNext = !done && STAGES.slice(0,i).every(ps=>job.shots[ps]);
+      return {s, key, done, isNext};
+    });
+
+    // 연결선 색상 (앞 단계가 완료됐을 때)
+    const line1Color = job.shots['전'] ? STAGE_COLORS.before : '';
+    const line2Color = job.shots['중'] ? STAGE_COLORS.during : '';
+
+    return `
+    <div class="job-card${allDone?' is-done':''}${isActive?' is-active':''}" id="jc-${job.id}">
+      <div class="job-top">
+        <div class="job-icon-wrap">${getJobIcon(job.title)}</div>
+        <div class="job-meta">
+          <div class="job-title">${job.title}${allDone?'<span class="done-badge">완료</span>':''}</div>
+          <div class="job-loc">${job.loc||'위치 미입력'}</div>
+          <div class="job-time">${formatTime(job.lastAt)} 마지막 촬영</div>
+        </div>
+      </div>
+
+      <!-- ★ 진행 상태 시각화 ★ -->
+      <div class="job-progress">
+        <!-- 연결선 -->
+        <div class="progress-line">
+          <div class="pl-seg${line1Color?' filled-before':''}"></div>
+          <div style="width:28px;flex-shrink:0;"></div>
+          <div class="pl-seg${line1Color?' filled-before':''}"></div>
+          <div style="width:28px;flex-shrink:0;"></div>
+          <div class="pl-seg${line2Color?' filled-during':''}"></div>
+          <div style="width:28px;flex-shrink:0;"></div>
+          <div class="pl-seg${line2Color?' filled-during':''}"></div>
+        </div>
+        <!-- 도트 -->
+        <div class="progress-track">
+          ${dots.map(d=>`
+            <div class="pt-item">
+              <div class="pt-dot${d.done?' done-'+d.key:''}${d.isNext?' active-stage':''}"
+                onclick="loadJobWithStage('${job.id}','${d.s}','${d.key}')">
+                ${d.done?'✓':d.isNext?'▶':d.s}
+              </div>
+              <div class="pt-label${d.done?' done':''}">
+                ${d.s}${d.done&&job.shots[d.s].time?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].time+'</span>':''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 액션 버튼 행 -->
+      <div class="job-action-row">
+        ${dots.map(d=>{
+          const label = d.done ? d.s+'✓' : d.s;
+          const cls = d.isNext ? 'jab next-up' : d.done ? 'jab already' : 'jab';
+          return `<button class="${cls}" onclick="loadJobWithStage('${job.id}','${d.s}','${d.key}')">
+            ${d.isNext?'▶ '+label:label}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 작업 불러오기 (특정 구분)
+function loadJobWithStage(id, stage, stageKey) {
+  const job = A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  A.activeJobId = id;
+
+  document.getElementById('f-title').value  = job.title==='미입력'?'':job.title;
+  document.getElementById('f-loc').value    = job.loc||'';
+  setStage(stage, stageKey);
+  updateFname();
+
+  // 배너 표시
+  const banner = document.getElementById('active-banner');
+  document.getElementById('ab-name').textContent = job.title + (job.loc?' / '+job.loc:'');
+  document.getElementById('ab-stage').textContent = '촬영 구분: '+stage;
+  banner.classList.add('show');
+
+  goTab('shoot', document.querySelectorAll('.tab')[1]);
+  showToast('📋 '+job.title+' — '+stage);
+}
+
+function clearActive() {
+  A.activeJobId=null;
+  document.getElementById('active-banner').classList.remove('show');
+}
+
+// 아이콘 자동 선택
+function getJobIcon(title) {
+  const map = [
+    ['타일','🟫'],['도배','🪟'],['도어','🚪'],['문','🚪'],['욕실','🛁'],
+    ['배관','🪣'],['전기','🔌'],['조명','💡'],['방수','💧'],['유리','🪟'],
+    ['페인트','🎨'],['마루','🪵'],['천장','🏗️'],['창문','🪟'],['열쇠','🔑'],
+    ['잠금','🔑'],['보일러','🔥'],['하수','🪣'],['단열','🧱'],['철거','🔨'],
+  ];
+  for(const [kw, icon] of map) {
+    if(title.includes(kw)) return icon;
+  }
+  return '🔧';
+}
+
+function formatTime(iso) {
+  if(!iso) return '';
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  const mo = d.getMonth()+1, da = d.getDate();
+  const today = new Date();
+  if(d.toDateString()===today.toDateString()) return h+':'+m;
+  return mo+'/'+da+' '+h+':'+m;
+}
+
+// ════════════════════════
+//  업로드 → 자동으로 작업 목록 업데이트
+// ════════════════════════
+async function uploadDrive() {
+  const url    = document.getElementById('s-url').value.trim();
+  const folder = document.getElementById('s-folder').value.trim();
+  if(!url||!folder) {
+    showToast('⚙️ 설정에서 드라이브 연동 먼저','warn');
+    goTab('settings',document.querySelectorAll('.tab')[3]); return;
+  }
+  if(!A.compositeDataUrl){ showToast('먼저 촬영하세요','warn'); return; }
+
+  const btn=document.getElementById('upload-btn');
+  btn.disabled=true; btn.innerHTML='<span>⏳</span> 업로드 중...';
+  setBadge('uploading','업로드 중...');
+
+  const title    = document.getElementById('f-title').value||'미입력';
+  const loc      = document.getElementById('f-loc').value||'';
+  const stage    = A.currentStage;
+  const fileName = buildFname();
+
+  try {
+    const res  = await fetch(url,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:A.compositeDataUrl,fileName,folderId:folder})
+    });
+    const json = await res.json();
+    if(json.status==='ok') {
+      // ★ 작업 목록 자동 업데이트
+      updateJobAfterSave(title, loc, stage, json.fileName||fileName);
+      setBadge('ok','드라이브 연결됨');
+      showToast('✅ 저장 완료');
+      handleNextStage(title, loc, stage);
+      retake();
+    } else throw new Error();
+  } catch(e) {
+    // 오프라인도 목록엔 반영
+    updateJobAfterSave(title, loc, stage, fileName);
+    setBadge('fail','연결 실패');
+    showToast('📴 로컬 저장됨','warn');
+    handleNextStage(title, loc, stage);
+    retake();
+  } finally {
+    btn.disabled=false; btn.innerHTML='<span>☁️</span> 구글 드라이브에 저장';
+    saveAll();
+  }
+}
+
+function updateJobAfterSave(title, loc, stage, fileName) {
+  const job = getOrCreateJob(title, loc);
+  const now  = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if(stage) job.shots[stage] = { time: timeStr, fileName };
+  job.lastAt = now.toISOString();
+  A.activeJobId = job.id;
+  renderJobs();
+}
+
+function handleNextStage(title, loc, stage) {
+  if(!document.getElementById('t-next').classList.contains('on')) return;
+  const idx = STAGES.indexOf(stage);
+  if(idx>=0 && idx<STAGES.length-1) {
+    const next = STAGES[idx+1];
+    setStage(next, STAGE_KEY[next]);
+    showToast('다음: '+next+' 촬영 준비');
+  }
+}
+
+// ════════════════════════
+//  파일명
+// ════════════════════════
+function buildFname() {
+  const fmt=document.getElementById('s-fmt').value;
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const title=cl(document.getElementById('f-title').value);
+  const loc=cl(document.getElementById('f-loc').value);
+  const person=cl(document.getElementById('f-person').value);
+  const stage=cl(A.currentStage);
+  const date=(document.getElementById('f-date').value||'').replace(/-/g,'');
+  const map={
+    'date_title_stage':[date,title,stage],
+    'date_person_title_stage':[date,person,title,stage],
+    'title_loc_date_stage':[title,loc,date,stage],
+    'custom':[date,title,stage],
+  };
+  return (map[fmt]||[date,title,stage]).filter(Boolean).join('_')+'.jpg';
+}
+function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); }
+
+// ════════════════════════
+//  음성 인식
+// ════════════════════════
+function toggleVoice(){ if(A.listening) stopVoice(); else startVoice(); }
+function startVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  A.recognition=new SR();
+  A.recognition.lang='ko-KR'; A.recognition.interimResults=true;
+  A.recognition.onstart=()=>{
+    A.listening=true;
+    document.getElementById('voice-btn').classList.add('listening');
+    document.getElementById('voice-side').textContent='🔴';
+    document.getElementById('mic-label').textContent='듣는 중...';
+  };
+  A.recognition.onresult=(e)=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('vb-text').textContent='"'+t+'"';
+    document.getElementById('voice-bubble').classList.add('show');
+    if(e.results[0].isFinal) parseVoice(t);
+  };
+  A.recognition.onerror=(e)=>{ stopVoice(); showToast('마이크 오류','err'); };
+  A.recognition.onend=()=>stopVoice();
+  A.recognition.start();
+}
+function stopVoice(){
+  A.listening=false;
+  if(A.recognition) try{A.recognition.stop();}catch(e){}
+  document.getElementById('voice-btn').classList.remove('listening');
+  document.getElementById('voice-side').textContent='🎤';
+  document.getElementById('mic-label').textContent='말하기 — 자동 입력';
+}
+function parseVoice(text){
+  const filled=[];
+  const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사'],'완료':['완료','끝']};
+  for(const [val,kws] of Object.entries(stageMap)){
+    if(kws.some(k=>text.includes(k))){ setStage(val,STAGE_KEY[val]); filled.push('구분:'+val); break; }
+  }
+  const nm=text.match(/([가-힣]{2,4})(씨|님|대리|과장|팀장|부장|소장)?(?=\s|$)/);
+  if(nm){
+    const sw=['시공','준공','착공','점검','완료','타일','도배','배관','전기'];
+    if(!sw.some(w=>nm[1].includes(w))){ document.getElementById('f-person').value=nm[1]; markVF('person'); filled.push('담당자:'+nm[1]); }
+  }
+  const locP=[/(\d+동\s*\d*호?)/,/(\d+층)/,/([가-힣]+\s*(아파트|단지|빌라|건물))/];
+  for(const p of locP){
+    const m=text.match(p);
+    if(m){ const cur=document.getElementById('f-loc').value; document.getElementById('f-loc').value=cur?cur+' '+m[1]:m[1]; markVF('loc'); filled.push('위치:'+m[1]); break; }
+  }
+  let t2=text;
+  Object.values(stageMap).flat().forEach(k=>t2=t2.replace(k,''));
+  if(nm) t2=t2.replace(nm[0],'');
+  locP.forEach(p=>t2=t2.replace(p,''));
+  t2=t2.replace(/[은는이가을를에서으로도만]/g,' ').replace(/\s{2,}/g,' ').trim();
+  if(t2.length>=2){ document.getElementById('f-title').value=t2; markVF('title'); filled.push('작업명:'+t2); }
+  document.getElementById('vb-tags').innerHTML=filled.map(f=>`<div class="vb-tag">${f}</div>`).join('');
+  updateFname();
+  showToast('🎤 '+filled.length+'개 입력');
+}
+function markVF(f){
+  const i=document.getElementById('f-'+f), l=document.getElementById('lbl-'+f);
+  if(i) i.classList.add('vf-field');
+  if(l) l.style.display='inline';
+}
+function clearFields(){
+  ['title','loc','person'].forEach(f=>{
+    const i=document.getElementById('f-'+f), l=document.getElementById('lbl-'+f);
+    if(i){i.value='';i.classList.remove('vf-field');}
+    if(l) l.style.display='none';
+  });
+  document.getElementById('voice-bubble').classList.remove('show');
+  A.currentStage='';
+  ['before','during','after','check','done'].forEach(k=>{ const b=document.getElementById('sb-'+k); if(b) b.className='sb'; });
+  updateFname(); showToast('초기화');
+}
+
+// ════════════════════════
+//  드라이브
+// ════════════════════════
+function setBadge(t,tx){ const el=document.getElementById('drive-badge'); el.className='drive-badge '+(t||''); el.textContent=tx; }
+function updateDriveBadge(){ setBadge(document.getElementById('s-url').value?'ok':'', document.getElementById('s-url').value?'드라이브 연결됨':'드라이브 미연결'); }
+async function testConn(){
+  const url=document.getElementById('s-url').value.trim(), fol=document.getElementById('s-folder').value.trim();
+  if(!url||!fol){showToast('URL과 폴더 ID 입력','warn');return;}
+  document.getElementById('test-btn').textContent='⏳';
+  try{ await fetch(url+'?ping=1'); setBadge('ok','드라이브 연결됨'); showToast('✅ 연결 성공'); }
+  catch(e){ setBadge('fail','연결 실패'); showToast('연결 실패','err'); }
+  document.getElementById('test-btn').textContent='🔗';
+}
+
+// ════════════════════════
+//  설정 저장
+// ════════════════════════
+function saveSet(){
+  try{ localStorage.setItem('fb4_cfg',JSON.stringify({url:document.getElementById('s-url').value,folder:document.getElementById('s-folder').value,org:document.getElementById('s-org').value,fmt:document.getElementById('s-fmt').value})); }catch(e){}
+  updateDriveBadge(); updateFname();
+}
+function saveAll(){
+  try{ localStorage.setItem('fb4_jobs',JSON.stringify(A.jobs)); }catch(e){}
+}
+function loadAll(){
+  try{
+    const c=JSON.parse(localStorage.getItem('fb4_cfg')||'{}');
+    if(c.url) document.getElementById('s-url').value=c.url;
+    if(c.folder) document.getElementById('s-folder').value=c.folder;
+    if(c.org) document.getElementById('s-org').value=c.org;
+    if(c.fmt) document.getElementById('s-fmt').value=c.fmt;
+    A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
+  }catch(e){}
+}
+function copyCode(){ navigator.clipboard.writeText(document.getElementById('gas-code').textContent).then(()=>showToast('📋 코드 복사됨')).catch(()=>showToast('직접 선택해서 복사','warn')); }
+
+// ════════════════════════
+//  유틸
+// ════════════════════════
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+</script>
+</body>
+</html>
