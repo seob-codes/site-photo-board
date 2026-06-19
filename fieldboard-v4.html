@@ -608,6 +608,7 @@ function shoot() {
     comp.width=snp.width; comp.height=snp.height;
     comp.getContext('2d').drawImage(snp,0,0);
     A.compositeDataUrl=snp.toDataURL('image/jpeg',0.92);
+    saveToGallery(); // ➕ 추가: 업로드 성공/실패와 무관하게 촬영하면 항상 폰에도 저장
     hide('cam-wrap'); hide('cam-controls');
     show('preview-wrap'); show('after-shoot');
     updateFname();
@@ -987,6 +988,32 @@ function buildFname() {
   const base=[receipt,complex,dong,ho,worktype,location,defect].filter(Boolean).join('_');
   const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
   return [base,stagePart].filter(Boolean).join('_')+'.jpg';
+}
+// ➕ 추가: 갤러리 저장용 파일명 — 단지명을 맨 앞에 둬서 폰 다운로드 폴더에서 단지별로 묶여 찾기 쉽게 함 (드라이브용 buildFname()은 그대로 유지)
+function buildGalleryFname() {
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const meta = getFieldMeta();
+  const receipt=cl(meta.receipt);
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const worktype=cl(meta.worktype);
+  const location=cl(meta.location);
+  const defect=cl(meta.defect);
+  const stage=A.currentStage;
+  const base=[complex,receipt,dong,ho,worktype,location,defect].filter(Boolean).join('_');
+  const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
+  return [base,stagePart].filter(Boolean).join('_')+'.jpg';
+}
+// ➕ 추가: 촬영한 사진을 폰 다운로드 폴더(갤러리에도 보통 표시됨)에 저장 — 드라이브 업로드 성공/실패와 무관하게 항상 실행
+function saveToGallery(){
+  if(!A.compositeDataUrl) return;
+  const a=document.createElement('a');
+  a.href=A.compositeDataUrl;
+  a.download=buildGalleryFname();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
