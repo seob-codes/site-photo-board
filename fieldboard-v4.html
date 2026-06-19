@@ -557,8 +557,15 @@ function flipCam(){ A.facing=A.facing==='environment'?'user':'environment'; star
 function shoot() {
   const vid=document.getElementById('live-video');
   const snp=document.getElementById('snap-canvas');
-  snp.width=vid.videoWidth||1280; snp.height=vid.videoHeight||720;
-  snp.getContext('2d').drawImage(vid,0,0);
+  const vw=vid.videoWidth||1280, vh=vid.videoHeight||720;
+  // 화면에 보이던 비율(object-fit:cover)과 똑같이 가운데 기준으로 잘라서 찍음
+  const targetRatio = vid.clientWidth / vid.clientHeight;
+  const srcRatio = vw / vh;
+  let sx=0, sy=0, sw=vw, sh=vh;
+  if(srcRatio > targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2; }
+  else { sh=vw/targetRatio; sy=(vh-sh)/2; }
+  snp.width=sw; snp.height=sh;
+  snp.getContext('2d').drawImage(vid, sx,sy,sw,sh, 0,0,sw,sh);
   compositeOverlay(snp,()=>{
     const comp=document.getElementById('composite-canvas');
     comp.width=snp.width; comp.height=snp.height;
@@ -944,7 +951,9 @@ function buildFname() {
 }
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
-  const digits=el.value.replace(/\D/g,'').slice(0,11);
+  const rawAll=el.value.replace(/\D/g,'');
+  // 7~8번째 자리는 자동으로 끼워넣은 "44"라서, 진짜 입력값 계산에서는 항상 제외
+  const digits=(rawAll.length>6 ? rawAll.slice(0,6)+rawAll.slice(8) : rawAll).slice(0,11);
   const part1=digits.slice(0,6), part2=digits.slice(6,11);
   el.value = digits.length>6 ? `${part1}-44-${part2}` : part1;
   updateFname();
