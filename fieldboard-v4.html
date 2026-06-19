@@ -318,6 +318,7 @@ select option{background:var(--surface2);}
       <!-- 촬영 컨트롤 -->
       <div class="cam-controls" id="cam-controls">
         <div class="shutter" onclick="checkAndShoot()">📷</div>
+        <div class="side-btn" onclick="generateCertificate()" title="완료확인서 생성">📄</div>
       </div>
 
       <!-- 저장/재촬영 -->
@@ -463,6 +464,25 @@ select option{background:var(--surface2);}
         </div>
       </div>
       <div class="card">
+        <div class="card-label">완료확인서 정보</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공사명</label>
+          <input type="text" id="s-projectname" placeholder="예) LHQ+ 파주1권 건설임대주택 유지보수공사 [건축]" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">보수 업체</label>
+          <input type="text" id="s-contractor" placeholder="예) (주)신영씨앤디 / (주)지용종합건설" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">작업자</label>
+          <input type="text" id="s-worker" placeholder="예) 홍길동" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">현장대리인</label>
+          <input type="text" id="s-manager" placeholder="예) 김태섭" oninput="saveSet()">
+        </div>
+      </div>
+      <div class="card">
         <div class="card-label">목록 관리</div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">단지명 목록</label>
@@ -528,6 +548,19 @@ select option{background:var(--surface2);}
       <button class="confirm-back" onclick="cancelShootConfirm()">돌아가기</button>
       <button class="confirm-exception" onclick="exceptionShoot()">예외</button>
       <button class="confirm-go" id="confirm-go-btn" onclick="confirmShoot()">촬영</button>
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 작업 삭제 확인창(촬영 확인창과 같은 디자인) -->
+<div class="confirm-modal" id="delete-modal">
+  <div class="confirm-box">
+    <div class="confirm-title">이 작업을 삭제하시겠습니까?</div>
+    <div class="confirm-fname" id="delete-job-name">—</div>
+    <div class="confirm-warn" style="display:block;">⚠ 삭제하면 되돌릴 수 없습니다</div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="cancelDeleteJob()">취소</button>
+      <button class="confirm-go" style="background:var(--danger);border-color:var(--danger);" onclick="confirmDeleteJob()">삭제</button>
     </div>
   </div>
 </div>
@@ -877,6 +910,10 @@ function renderJobs() {
             </div>
           `;}).join('')}
         </div>
+        ${hasShots('후') ? `
+        <button class="jab${job.certs&&job.certs.length?' already':''}" style="margin-top:8px;width:100%;" onclick="viewCerts('${job.id}')">
+          📄 완료확인서${job.certs&&job.certs.length?' ('+job.certs.length+'건) 보기':' 없음 — 촬영 화면에서 만들기'}
+        </button>` : ''}
       </div>
 
       <!-- 액션 버튼 행 -->
@@ -919,13 +956,24 @@ function loadJobWithStage(id, stage, stageKey) {
   showToast('📋 '+job.title+' — '+stage);
 }
 
+let _pendingDeleteId=null;
 function deleteJob(id){
   const job=A.jobs.find(j=>j.id===id);
   if(!job) return;
-  const ok=confirm('"'+job.title+(job.loc?' / '+job.loc:'')+'" 작업을 삭제하시겠습니까?\n삭제하면 되돌릴 수 없습니다.');
-  if(!ok) return;
-  A.jobs=A.jobs.filter(j=>j.id!==id);
-  if(A.activeJobId===id) A.activeJobId=null;
+  _pendingDeleteId=id;
+  document.getElementById('delete-job-name').textContent=job.title+(job.loc?' / '+job.loc:'');
+  document.getElementById('delete-modal').classList.add('show');
+}
+function cancelDeleteJob(){
+  _pendingDeleteId=null;
+  document.getElementById('delete-modal').classList.remove('show');
+}
+function confirmDeleteJob(){
+  if(!_pendingDeleteId) return;
+  A.jobs=A.jobs.filter(j=>j.id!==_pendingDeleteId);
+  if(A.activeJobId===_pendingDeleteId) A.activeJobId=null;
+  _pendingDeleteId=null;
+  document.getElementById('delete-modal').classList.remove('show');
   saveAll();
   renderJobs();
   showToast('🗑️ 삭제됨');
@@ -944,6 +992,14 @@ function viewShots(jobId, stage){
   if(!job||!job.shots[stage]||!job.shots[stage].length) return;
   SV.shots=job.shots[stage];
   SV.idx=SV.shots.length-1; // 가장 최근 사진부터 보여줌
+  document.getElementById('shot-viewer').classList.add('show');
+  renderShotViewer();
+}
+function viewCerts(jobId){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job||!job.certs||!job.certs.length){ showToast('완료확인서가 아직 없습니다 — 촬영 화면에서 만들어보세요','warn'); return; }
+  SV.shots=job.certs;
+  SV.idx=SV.shots.length-1;
   document.getElementById('shot-viewer').classList.add('show');
   renderShotViewer();
 }
@@ -1113,6 +1169,145 @@ function saveToGallery(){
   a.click();
   document.body.removeChild(a);
 }
+// ════════════════════════
+//  완료확인서 (보드판처럼 양식에 맞춰 이미지로 생성)
+// ════════════════════════
+function nextCertSeqFor(meta){
+  const key=makeJobKey(meta.receipt);
+  const job=A.jobs.find(j=>j.key===key);
+  return (job&&job.certSeq?job.certSeq:0)+1;
+}
+function buildCertFname(meta, seq){
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const receipt=cl(meta.receipt), complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null, ho=meta.ho?cl(meta.ho)+'호':null;
+  const base=[receipt,complex,dong,ho].filter(Boolean).join('_');
+  const seqStr=String(seq).padStart(3,'0');
+  return [base,'완료확인서',seqStr].filter(Boolean).join('_')+'.jpg';
+}
+function wrapCertText(ctx,text,x,y,maxWidth,lineHeight){
+  if(!text) return;
+  const chars=text.split('');
+  let line='';
+  const lines=[];
+  chars.forEach(ch=>{
+    const test=line+ch;
+    if(ctx.measureText(test).width>maxWidth && line){ lines.push(line); line=ch; }
+    else line=test;
+  });
+  if(line) lines.push(line);
+  lines.forEach((l,i)=>ctx.fillText(l, x, y+i*lineHeight));
+}
+function drawCertificate(canvas, meta){
+  const W=1000, H=1414;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='middle';
+
+  const margin=60, labelW=160, tableW=W-margin*2, valueW=tableW-labelW, x0=margin;
+  let y=90;
+
+  ctx.fillStyle='#000';
+  ctx.font="bold 38px 'Noto Sans KR',sans-serif";
+  ctx.textAlign='center';
+  ctx.fillText('공 사 완 료 확 인 서', W/2, y);
+  y+=60;
+
+  const projectname=document.getElementById('s-projectname').value||'';
+  const contractor=document.getElementById('s-contractor').value||'';
+  const worker=document.getElementById('s-worker').value||'';
+  const manager=document.getElementById('s-manager').value||'';
+  const dongHo=[meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
+  const today=new Date();
+  const dateStr=today.getFullYear()+'년 '+(today.getMonth()+1)+'월 '+today.getDate()+'일';
+  const repairContent=[meta.worktype,meta.location,meta.defect].filter(Boolean).join(' / ');
+
+  function row(label, value, rowH, valueFont){
+    ctx.fillStyle='#eee';
+    ctx.fillRect(x0,y,labelW,rowH);
+    ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
+    ctx.strokeRect(x0,y,labelW,rowH);
+    ctx.strokeRect(x0+labelW,y,valueW,rowH);
+    ctx.fillStyle='#000';
+    ctx.font="bold 18px 'Noto Sans KR',sans-serif";
+    ctx.textAlign='center';
+    ctx.fillText(label, x0+labelW/2, y+(rowH>60?28:rowH/2));
+    ctx.font=(valueFont||"18px 'Noto Sans KR',sans-serif");
+    ctx.textAlign='left';
+    if(rowH>60){ wrapCertText(ctx, value, x0+labelW+16, y+34, valueW-32, 26); }
+    else { ctx.fillText(value, x0+labelW+16, y+rowH/2); }
+    y+=rowH;
+  }
+
+  row('공 사 명', projectname, 50);
+  row('보수 업체', contractor, 50);
+  row('접 수 번 호', meta.receipt||'', 50);
+  row('단지명 (동,호)', (meta.complex||'')+' '+dongHo, 50);
+  row('접 수 내 용', meta.defect||'', 100);
+  row('보 수 내 용', repairContent, 130);
+  row('보수완료일', dateStr, 50);
+
+  // 작업자 / 현장대리인 (한 줄에 2칸씩)
+  const halfLabelW=110, halfW=tableW/2;
+  ctx.fillStyle='#eee';
+  ctx.fillRect(x0,y,halfLabelW,50);
+  ctx.fillRect(x0+halfW,y,halfLabelW,50);
+  ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
+  ctx.strokeRect(x0,y,halfLabelW,50);
+  ctx.strokeRect(x0+halfLabelW,y,halfW-halfLabelW,50);
+  ctx.strokeRect(x0+halfW,y,halfLabelW,50);
+  ctx.strokeRect(x0+halfW+halfLabelW,y,tableW-halfW-halfLabelW,50);
+  ctx.fillStyle='#000'; ctx.font="bold 18px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
+  ctx.fillText('작 업 자', x0+halfLabelW/2, y+25);
+  ctx.fillText('현장대리인', x0+halfW+halfLabelW/2, y+25);
+  ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
+  ctx.fillText(worker, x0+halfLabelW+14, y+25);
+  ctx.fillText(manager+(manager?' (인)':''), x0+halfW+halfLabelW+14, y+25);
+  y+=80;
+
+  ctx.font="17px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
+  ctx.fillText('상기 접수내용 및 보수내용대로 보수공사를 완료하였음을 확인합니다.', W/2, y);
+  y+=60;
+  ctx.font="20px 'Noto Sans KR',sans-serif";
+  ctx.fillText(dateStr, W/2, y);
+  y+=70;
+
+  ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
+  ctx.fillText('확인자(입주자)  :', x0+200, y);
+  ctx.fillText('(인)', x0+tableW-60, y);
+  y+=50;
+  ctx.fillText('확인자(관리소)  :', x0+200, y);
+  ctx.fillText('(인)', x0+tableW-60, y);
+}
+function generateCertificate(){
+  const meta=getFieldMeta();
+  if(!meta.receipt){ showToast('접수번호를 입력해주세요','warn'); return; }
+  const seq=nextCertSeqFor(meta);
+  const fname=buildCertFname(meta, seq);
+  const canvas=document.createElement('canvas');
+  drawCertificate(canvas, meta);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+
+  // 폰 갤러리에 저장
+  const a=document.createElement('a');
+  a.href=dataUrl; a.download=fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+  // IndexedDB + 작업목록에 기록
+  const certId='cert_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  savePhotoToDB(certId, dataUrl);
+  const job=getOrCreateJob(meta);
+  job.certSeq=seq;
+  if(!Array.isArray(job.certs)) job.certs=[];
+  const now=new Date();
+  const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  job.certs.push({time:timeStr, fileName:fname, id:certId});
+  job.lastAt=now.toISOString();
+  saveAll();
+  renderJobs();
+  showToast('📄 완료확인서 저장됨');
+}
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
   const digits=el.value.replace(/\D/g,'').slice(0,13);
@@ -1220,7 +1415,15 @@ async function testConn(){
 //  설정 저장
 // ════════════════════════
 function saveSet(){
-  try{ localStorage.setItem('fb4_cfg',JSON.stringify({url:document.getElementById('s-url').value,folder:document.getElementById('s-folder').value,org:document.getElementById('s-org').value})); }catch(e){}
+  try{ localStorage.setItem('fb4_cfg',JSON.stringify({
+    url:document.getElementById('s-url').value,
+    folder:document.getElementById('s-folder').value,
+    org:document.getElementById('s-org').value,
+    projectname:document.getElementById('s-projectname').value,
+    contractor:document.getElementById('s-contractor').value,
+    worker:document.getElementById('s-worker').value,
+    manager:document.getElementById('s-manager').value,
+  })); }catch(e){}
   updateDriveBadge(); updateFname();
 }
 function saveAll(){
@@ -1283,6 +1486,10 @@ function loadAll(){
     if(c.url) document.getElementById('s-url').value=c.url;
     if(c.folder) document.getElementById('s-folder').value=c.folder;
     if(c.org) document.getElementById('s-org').value=c.org;
+    if(c.projectname) document.getElementById('s-projectname').value=c.projectname;
+    if(c.contractor) document.getElementById('s-contractor').value=c.contractor;
+    if(c.worker) document.getElementById('s-worker').value=c.worker;
+    if(c.manager) document.getElementById('s-manager').value=c.manager;
     A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
     migrateJobs(); // ➕ 추가: 예전 데이터(단지+동+호+공종 키, 단계당 1장 객체)를 새 구조(접수번호 키, 배열)로 변환
     const savedLists=JSON.parse(localStorage.getItem('fb4_lists')||'{}');
