@@ -87,13 +87,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .dd-empty{padding:10px 12px;font-size:11px;color:var(--text3);}
 
 /* ── 음성 (항목별 마이크) ── */
-.mic-mini{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0 2px;vertical-align:middle;}
-.mic-mini.listening{color:var(--danger);animation:ring 1.2s infinite;}
+.mic-mini{background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:15px;cursor:pointer;width:30px;height:24px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mic-mini.listening{color:var(--danger);border-color:var(--danger);animation:ring 1.2s infinite;}
 @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
 
 /* ── 입력 ── */
 .ig{margin-bottom:8px;}
-.il{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+.il{font-size:9px;font-weight:700;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
 .ir{display:flex;gap:6px;}
 input[type=text],input[type=date],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:all 0.2s;-webkit-appearance:none;}
 input:focus,select:focus{border-color:var(--accent);}
@@ -317,55 +317,64 @@ select option{background:var(--surface2);}
           <div class="fname-val" id="fname-val">—</div>
         </div>
         <div class="ig">
-          <div class="il">접수번호 <button class="mic-mini" id="mic-receipt" onclick="voiceFor('receipt')">🎤</button></div>
-          <input type="text" id="f-receipt" inputmode="numeric" oninput="formatReceipt(this)">
+          <div class="il">접수번호</div>
+          <div class="ir">
+            <input type="text" id="f-receipt" inputmode="numeric" oninput="formatReceipt(this)">
+            <button class="mic-mini" id="mic-receipt" onclick="voiceFor('receipt')">🎤</button>
+          </div>
         </div>
         <div class="ig">
-          <div class="il">단지명 <button class="mic-mini" id="mic-complex" onclick="voiceFor('complex')">🎤</button></div>
+          <div class="il">단지명</div>
           <div class="ir">
             <input type="text" id="f-complex" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('complex')">▾</button>
+            <button class="mic-mini" id="mic-complex" onclick="voiceFor('complex')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-complex"></div>
         </div>
         <div class="ig">
-          <div class="il">동 / 호 <button class="mic-mini" id="mic-dongho" onclick="voiceFor('dongho')">🎤</button></div>
+          <div class="il">동 / 호</div>
           <div class="ir">
             <input type="text" id="f-dong" oninput="updateFname()">
             <input type="text" id="f-ho" oninput="updateFname()">
+            <button class="mic-mini" id="mic-dongho" onclick="voiceFor('dongho')">🎤</button>
           </div>
         </div>
         <div class="ig">
-          <div class="il">공종 <button class="mic-mini" id="mic-worktype" onclick="voiceFor('worktype')">🎤</button></div>
+          <div class="il">공종</div>
           <div class="ir">
             <input type="text" id="f-worktype" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('worktype')">▾</button>
+            <button class="mic-mini" id="mic-worktype" onclick="voiceFor('worktype')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-worktype"></div>
         </div>
         <div class="ig">
-          <div class="il">위치 <button class="mic-mini" id="mic-location" onclick="voiceFor('location')">🎤</button></div>
+          <div class="il">위치</div>
           <div class="ir">
             <input type="text" id="f-location" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('location')">▾</button>
+            <button class="mic-mini" id="mic-location" onclick="voiceFor('location')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-location"></div>
         </div>
         <div class="ig">
-          <div class="il">하자내용 <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button></div>
+          <div class="il">하자내용</div>
           <div class="ir">
             <input type="text" id="f-defect" oninput="updateFname()">
             <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
+            <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button>
           </div>
           <div class="dd-panel" id="dd-defect"></div>
         </div>
         <div class="ig">
-          <div class="il">촬영 구분 <button class="mic-mini" id="mic-stage" onclick="voiceFor('stage')">🎤</button></div>
+          <div class="il">촬영 구분</div>
           <div class="stage-btns">
             <button class="sb" id="sb-before" onclick="setStage('전','before')">전</button>
             <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
             <button class="sb" id="sb-after"  onclick="setStage('후','after')">후</button>
             <button class="sb" id="sb-check"  onclick="setStage('점검','check')" style="font-size:11px;">점검</button>
+            <button class="mic-mini" id="mic-stage" onclick="voiceFor('stage')">🎤</button>
           </div>
           <input type="hidden" id="f-stage">
         </div>
