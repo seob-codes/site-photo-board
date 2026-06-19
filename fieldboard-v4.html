@@ -77,6 +77,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .lightbox img{max-width:100%;max-height:85vh;border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 .lightbox-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
+/* ── 목록 드롭다운 (촬영 탭) ── */
+.dd-toggle{width:38px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
+.dd-panel{display:none;margin-top:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);max-height:180px;overflow-y:auto;}
+.dd-panel.show{display:block;}
+.dd-item{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:active{background:rgba(79,142,247,0.15);}
+.dd-empty{padding:10px 12px;font-size:11px;color:var(--text3);}
+
 /* ── 음성 ── */
 .voice-btn.listening{border-color:var(--danger);background:rgba(247,95,95,0.1);color:var(--danger);animation:ring 1.2s infinite;}
 @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
@@ -327,8 +336,11 @@ select option{background:var(--surface2);}
         </div>
         <div class="ig">
           <div class="il">단지명 <span class="vf" id="lbl-complex">🎤</span></div>
-          <input type="text" id="f-complex" list="dl-complex" oninput="updateFname()">
-          <datalist id="dl-complex"></datalist>
+          <div class="ir">
+            <input type="text" id="f-complex" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('complex')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-complex"></div>
         </div>
         <div class="ig">
           <div class="il">동 / 호 <span class="vf" id="lbl-loc">🎤</span></div>
@@ -339,18 +351,27 @@ select option{background:var(--surface2);}
         </div>
         <div class="ig">
           <div class="il">공종 <span class="vf" id="lbl-worktype">🎤</span></div>
-          <input type="text" id="f-worktype" list="dl-worktype" oninput="updateFname()">
-          <datalist id="dl-worktype"></datalist>
+          <div class="ir">
+            <input type="text" id="f-worktype" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('worktype')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-worktype"></div>
         </div>
         <div class="ig">
           <div class="il">위치</div>
-          <input type="text" id="f-location" list="dl-location" oninput="updateFname()">
-          <datalist id="dl-location"></datalist>
+          <div class="ir">
+            <input type="text" id="f-location" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('location')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-location"></div>
         </div>
         <div class="ig">
           <div class="il">하자내용 <span class="vf" id="lbl-defect">🎤</span></div>
-          <input type="text" id="f-defect" list="dl-defect" oninput="updateFname()">
-          <datalist id="dl-defect"></datalist>
+          <div class="ir">
+            <input type="text" id="f-defect" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-defect"></div>
         </div>
         <div class="ig">
           <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
@@ -1058,12 +1079,36 @@ function saveLists(){
 }
 function renderLists(){
   ['complex','worktype','location','defect'].forEach(key=>{
-    document.getElementById('dl-'+key).innerHTML = A.lists[key].map(v=>`<option value="${v}"></option>`).join('');
     document.getElementById('chips-'+key).innerHTML = A.lists[key].map(v=>
       `<div class="chip">${v}<button onclick="removeListItem('${key}','${v.replace(/'/g,"\\'")}')">✕</button></div>`
     ).join('');
   });
 }
+
+// ════════════════════════
+//  목록 드롭다운 (촬영 탭에서 탭하면 펼쳐짐)
+// ════════════════════════
+function toggleDropdown(key){
+  const panel=document.getElementById('dd-'+key);
+  const wasOpen=panel.classList.contains('show');
+  closeAllDropdowns();
+  if(wasOpen) return;
+  panel.innerHTML = A.lists[key].length
+    ? A.lists[key].map(v=>`<div class="dd-item" onclick="selectDropdownItem('${key}','${v.replace(/'/g,"\\'")}')">${v}</div>`).join('')
+    : '<div class="dd-empty">설정 &gt; 목록 관리에서 항목을 추가하세요</div>';
+  panel.classList.add('show');
+}
+function selectDropdownItem(key,val){
+  document.getElementById('f-'+key).value=val;
+  closeAllDropdowns();
+  updateFname();
+}
+function closeAllDropdowns(){
+  document.querySelectorAll('.dd-panel').forEach(p=>p.classList.remove('show'));
+}
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.dd-toggle') && !e.target.closest('.dd-panel')) closeAllDropdowns();
+});
 function loadAll(){
   try{
     const c=JSON.parse(localStorage.getItem('fb4_cfg')||'{}');
