@@ -64,12 +64,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .last-shot.show{display:block;}
 
 /* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
-.live-board{position:absolute;left:0;bottom:0;width:42%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
+.live-board{position:absolute;left:0;bottom:0;width:30%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
 .live-board.show{display:block;}
 .lb-row{display:flex;border-bottom:1px solid #000;}
 .lb-row:last-child{border-bottom:none;}
-.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;font-size:10px;padding:3px 4px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
-.lb-val{flex:1;background:#fff;color:#000;font-weight:700;font-size:10px;padding:3px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;font-size:7px;padding:2px 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
+.lb-val{flex:1;background:#fff;color:#000;font-weight:700;font-size:7px;padding:2px 3px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .lb-val.lb-stages{padding:0;}
 .lb-stages span{flex:1;text-align:center;}
 .lightbox{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
@@ -87,7 +87,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .dd-empty{padding:10px 12px;font-size:11px;color:var(--text3);}
 
 /* ── 음성 (항목별 마이크) ── */
-.mic-mini{background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:15px;cursor:pointer;width:30px;height:24px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mic-mini{background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:15px;cursor:pointer;width:38px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .mic-mini.listening{color:var(--danger);border-color:var(--danger);animation:ring 1.2s infinite;}
 @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
 
@@ -294,7 +294,6 @@ select option{background:var(--surface2);}
 
       <!-- 촬영 컨트롤 -->
       <div class="cam-controls" id="cam-controls">
-        <div class="side-btn" onclick="flipCam()">🔄</div>
         <div class="shutter" onclick="shoot()">📷</div>
       </div>
 
@@ -499,7 +498,7 @@ select option{background:var(--surface2);}
 //  상태
 // ════════════════════════
 const A = {
-  stream:null, facing:'environment',
+  stream:null,
   compositeDataUrl:null,
   lastShotDataUrl:null,
   jobs:[],          // 찍으면서 자동 생성
@@ -536,14 +535,13 @@ async function startCam() {
   try {
     if(A.stream) A.stream.getTracks().forEach(t=>t.stop());
     A.stream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:A.facing,width:{ideal:1920},height:{ideal:1080}}, audio:false
+      video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}, audio:false
     });
     document.getElementById('live-video').srcObject = A.stream;
     show('cam-wrap'); hide('preview-wrap');
     show('cam-controls'); hide('after-shoot');
   } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
 }
-function flipCam(){ A.facing=A.facing==='environment'?'user':'environment'; startCam(); }
 
 function shoot() {
   const vid=document.getElementById('live-video');
@@ -583,8 +581,8 @@ function compositeOverlay(canvas, cb) {
   if(!hasAny && !wmOn){ cb(); return; }
 
   const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['작업사항',null],['비고','']];
-  const tableW=W*0.42, labelW=tableW*0.34, valueW=tableW-labelW;
-  const rowH=H*0.032, x0=0, y0=H-ROWS.length*rowH;
+  const tableW=W*0.3, labelW=tableW*0.34, valueW=tableW-labelW;
+  const rowH=H*0.024, x0=0, y0=H-ROWS.length*rowH;
   const fs=rowH*0.42;
 
   ctx.textBaseline='middle';
@@ -995,8 +993,10 @@ function applyVoiceField(field, text){
     formatReceipt(el);
   } else if(field==='dongho'){
     const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
+    const nums=text.match(/\d+/g);
     if(m){ document.getElementById('f-dong').value=m[1]; document.getElementById('f-ho').value=m[2]; }
-    else { showToast('"OO동 OO호" 형태로 다시 말씀해주세요','warn'); return; }
+    else if(nums&&nums.length>=2){ document.getElementById('f-dong').value=nums[0]; document.getElementById('f-ho').value=nums[1]; }
+    else { showToast('"303 704"처럼 숫자 두 개를 말씀해주세요','warn'); return; }
     updateFname();
   }
   showToast('✅ "'+text+'" 입력됨');
