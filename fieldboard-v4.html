@@ -86,7 +86,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .confirm-btns{display:flex;gap:8px;}
 .confirm-btns button{flex:1;padding:11px;border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:1px solid var(--border);}
 .confirm-go{background:var(--accent);color:#fff;border-color:var(--accent);}
+.confirm-go:disabled{opacity:0.35;cursor:not-allowed;}
 .confirm-back{background:var(--surface2);color:var(--text2);}
+.confirm-exception{background:var(--surface2);color:var(--accent2);border-color:var(--accent2);}
+.confirm-warn{font-size:11px;color:var(--danger);margin:-6px 0 12px;}
 
 /* ── 단계별 촬영 사진 뷰어(스와이프) ── */
 .shot-viewer{position:fixed;inset:0;background:rgba(5,6,10,0.95);display:none;align-items:center;justify-content:center;z-index:1100;}
@@ -318,7 +321,6 @@ select option{background:var(--surface2);}
 
       <!-- 촬영 컨트롤 -->
       <div class="cam-controls" id="cam-controls">
-        <div class="side-btn" onclick="shoot()" title="예외(정보 없이 촬영)">⚡</div>
         <div class="shutter" onclick="checkAndShoot()">📷</div>
       </div>
 
@@ -525,9 +527,11 @@ select option{background:var(--surface2);}
   <div class="confirm-box">
     <div class="confirm-title">이 파일명으로 촬영하시겠습니까?</div>
     <div class="confirm-fname" id="confirm-fname-val">—</div>
+    <div class="confirm-warn" id="confirm-warn" style="display:none;"></div>
     <div class="confirm-btns">
       <button class="confirm-back" onclick="cancelShootConfirm()">돌아가기</button>
-      <button class="confirm-go" onclick="confirmShoot()">촬영</button>
+      <button class="confirm-exception" onclick="exceptionShoot()">예외</button>
+      <button class="confirm-go" id="confirm-go-btn" onclick="confirmShoot()">촬영</button>
     </div>
   </div>
 </div>
@@ -606,15 +610,32 @@ const REQUIRED_FIELDS=[
   ['f-worktype','공종'],['f-location','위치'],['f-defect','하자내용'],
 ];
 function checkAndShoot(){
+  // ✏️ 변경: 빈 칸 있어도 확인창은 항상 띄우고, 안에서 경고+촬영버튼 비활성화로 처리(예외 버튼은 항상 가능)
+  const missing=[];
   for(const [id,label] of REQUIRED_FIELDS){
-    if(!document.getElementById(id).value.trim()){ showToast(label+' 항목이 비어있습니다','warn'); return; }
+    if(!document.getElementById(id).value.trim()) missing.push(label);
   }
-  if(!A.currentStage){ showToast('촬영 구분을 선택해주세요','warn'); return; }
+  if(!A.currentStage) missing.push('촬영 구분');
+
   document.getElementById('confirm-fname-val').textContent=buildFname();
+  const warn=document.getElementById('confirm-warn');
+  const goBtn=document.getElementById('confirm-go-btn');
+  if(missing.length){
+    warn.textContent='⚠ '+missing.join(', ')+' 항목이 비어있습니다';
+    warn.style.display='block';
+    goBtn.disabled=true;
+  } else {
+    warn.style.display='none';
+    goBtn.disabled=false;
+  }
   document.getElementById('confirm-modal').classList.add('show');
 }
 function cancelShootConfirm(){ document.getElementById('confirm-modal').classList.remove('show'); }
-function confirmShoot(){ document.getElementById('confirm-modal').classList.remove('show'); shoot(); }
+function confirmShoot(){
+  if(document.getElementById('confirm-go-btn').disabled) return;
+  document.getElementById('confirm-modal').classList.remove('show'); shoot();
+}
+function exceptionShoot(){ document.getElementById('confirm-modal').classList.remove('show'); shoot(); } // ➕ 추가: 빈 칸 있어도 검사 무시하고 바로 촬영
 function shoot() {
   const vid=document.getElementById('live-video');
   const snp=document.getElementById('snap-canvas');
