@@ -60,8 +60,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .side-btn:active{border-color:var(--accent);}
 
 /* ── 음성 ── */
-.voice-bar{display:flex;gap:8px;align-items:center;margin-bottom:9px;}
-.voice-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 14px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text2);transition:all 0.2s;}
+.voice-bar{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:9px;}
 .voice-btn.listening{border-color:var(--danger);background:rgba(247,95,95,0.1);color:var(--danger);animation:ring 1.2s infinite;}
 @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
 .voice-bubble{background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:var(--rs);padding:9px 12px;margin-bottom:9px;display:none;}
@@ -276,10 +275,7 @@ select option{background:var(--surface2);}
 
       <!-- 음성 버튼 -->
       <div class="voice-bar">
-        <div class="voice-btn" id="voice-btn" onclick="toggleVoice()">
-          <span>🎤</span>
-          <span id="mic-label" style="font-size:12px;font-weight:600;">말하기 — 자동 입력</span>
-        </div>
+        <div class="side-btn voice-btn" id="voice-btn" onclick="toggleVoice()">🎤</div>
         <div class="side-btn" onclick="clearFields()" style="font-size:14px;">🗑️</div>
       </div>
 
@@ -292,32 +288,36 @@ select option{background:var(--surface2);}
       <!-- 정보 입력 -->
       <div class="card">
         <div class="card-label">사진 정보</div>
+        <div class="fname-preview">
+          <div class="fname-label">저장 파일명</div>
+          <div class="fname-val" id="fname-val">—</div>
+        </div>
         <div class="ig">
           <div class="il">접수번호</div>
-          <input type="text" id="f-receipt" placeholder="예) 260121-44-00714" oninput="updateFname()">
+          <input type="text" id="f-receipt" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">단지명 <span class="vf" id="lbl-complex">🎤</span></div>
-          <input type="text" id="f-complex" placeholder="예) 문산당동3" oninput="updateFname()">
+          <input type="text" id="f-complex" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">동 / 호 <span class="vf" id="lbl-loc">🎤</span></div>
           <div class="ir">
-            <input type="text" id="f-dong" placeholder="예) 303" oninput="updateFname()">
-            <input type="text" id="f-ho" placeholder="예) 704" oninput="updateFname()">
+            <input type="text" id="f-dong" oninput="updateFname()">
+            <input type="text" id="f-ho" oninput="updateFname()">
           </div>
         </div>
         <div class="ig">
           <div class="il">공종 <span class="vf" id="lbl-worktype">🎤</span></div>
-          <input type="text" id="f-worktype" placeholder="예) 도배장판" oninput="updateFname()">
+          <input type="text" id="f-worktype" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">위치</div>
-          <input type="text" id="f-location" placeholder="예) 거실,주방" oninput="updateFname()">
+          <input type="text" id="f-location" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">하자내용 <span class="vf" id="lbl-defect">🎤</span></div>
-          <input type="text" id="f-defect" placeholder="예) 도배공사" oninput="updateFname()">
+          <input type="text" id="f-defect" oninput="updateFname()">
         </div>
         <div class="ig">
           <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
@@ -326,13 +326,8 @@ select option{background:var(--surface2);}
             <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
             <button class="sb" id="sb-after"  onclick="setStage('후','after')">후</button>
             <button class="sb" id="sb-check"  onclick="setStage('점검','check')" style="font-size:11px;">점검</button>
-            <button class="sb" id="sb-done"   onclick="setStage('완료','done')"  style="font-size:11px;">완료</button>
           </div>
           <input type="hidden" id="f-stage">
-        </div>
-        <div class="fname-preview">
-          <div class="fname-label">저장 파일명</div>
-          <div class="fname-val" id="fname-val">—</div>
         </div>
       </div>
 
@@ -428,7 +423,7 @@ const A = {
   recognition:null, listening:false,
 };
 const STAGES = ['전','중','후'];
-const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check','완료':'done'};
+const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check'};
 const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#4f8ef7',done:'#b088f7'};
 
 // ════════════════════════
@@ -523,7 +518,7 @@ function retake(){ A.compositeDataUrl=null; startCam(); }
 function setStage(val, key) {
   A.currentStage=val;
   document.getElementById('f-stage').value=val;
-  ['before','during','after','check','done'].forEach(k=>{
+  ['before','during','after','check'].forEach(k=>{
     const el=document.getElementById('sb-'+k);
     if(el) el.className='sb'+(k===key?' s-'+k:'');
   });
@@ -822,7 +817,6 @@ function startVoice(){
   A.recognition.onstart=()=>{
     A.listening=true;
     document.getElementById('voice-btn').classList.add('listening');
-    document.getElementById('mic-label').textContent='듣는 중...';
   };
   A.recognition.onresult=(e)=>{
     const t=Array.from(e.results).map(r=>r[0].transcript).join('');
@@ -838,11 +832,10 @@ function stopVoice(){
   A.listening=false;
   if(A.recognition) try{A.recognition.stop();}catch(e){}
   document.getElementById('voice-btn').classList.remove('listening');
-  document.getElementById('mic-label').textContent='말하기 — 자동 입력';
 }
 function parseVoice(text){
   const filled=[];
-  const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사'],'완료':['완료','끝']};
+  const stageMap={'전':['착공전','착공 전','전'],'중':['시공중','시공 중','공사중','작업중','중'],'후':['준공후','준공 후','완공','후'],'점검':['점검','검사']};
   for(const [val,kws] of Object.entries(stageMap)){
     if(kws.some(k=>text.includes(k))){ setStage(val,STAGE_KEY[val]); filled.push('구분:'+val); break; }
   }
@@ -874,7 +867,7 @@ function clearFields(){
   });
   document.getElementById('voice-bubble').classList.remove('show');
   A.currentStage='';
-  ['before','during','after','check','done'].forEach(k=>{ const b=document.getElementById('sb-'+k); if(b) b.className='sb'; });
+  ['before','during','after','check'].forEach(k=>{ const b=document.getElementById('sb-'+k); if(b) b.className='sb'; });
   updateFname(); showToast('초기화');
 }
 
