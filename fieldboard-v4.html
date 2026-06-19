@@ -62,6 +62,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 /* ── 마지막 촬영 썸네일 ── */
 .last-shot{position:absolute;bottom:10px;left:10px;width:46px;height:46px;border-radius:10px;border:2px solid rgba(255,255,255,0.7);background:#000 center/cover no-repeat;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;display:none;z-index:2;}
 .last-shot.show{display:block;}
+
+/* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
+.live-board{position:absolute;left:0;bottom:0;width:42%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
+.live-board.show{display:block;}
+.lb-row{display:flex;border-bottom:1px solid #000;}
+.lb-row:last-child{border-bottom:none;}
+.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;font-size:10px;padding:3px 4px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
+.lb-val{flex:1;background:#fff;color:#000;font-weight:700;font-size:10px;padding:3px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.lb-val.lb-stages{padding:0;}
+.lb-stages span{flex:1;text-align:center;}
 .lightbox{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
 .lightbox.show{display:flex;}
 .lightbox img{max-width:100%;max-height:85vh;border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
@@ -191,6 +201,12 @@ select option{background:var(--surface2);}
 .gas-box{background:#0a0c14;border-radius:var(--rs);padding:10px;overflow-x:auto;margin-bottom:8px;}
 .gas-box pre{font-size:9px;color:#7ec8a0;font-family:'JetBrains Mono',monospace;white-space:pre;line-height:1.6;}
 
+/* ── 목록 관리 ── */
+.list-add-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:8px 14px;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.chip button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0;line-height:1;}
+
 /* ── 토스트 ── */
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--success);color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:all 0.25s;white-space:nowrap;z-index:999;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -257,6 +273,13 @@ select option{background:var(--surface2);}
           <div class="c c-bl"></div><div class="c c-br"></div>
         </div>
         <div class="last-shot" id="last-shot" onclick="openLightbox()"></div>
+        <div class="live-board" id="live-board">
+          <div class="lb-row"><div class="lb-label">단지명</div><div class="lb-val" id="lbv-complex"></div></div>
+          <div class="lb-row"><div class="lb-label">동-호</div><div class="lb-val" id="lbv-dongho"></div></div>
+          <div class="lb-row"><div class="lb-label">위치</div><div class="lb-val" id="lbv-location"></div></div>
+          <div class="lb-row"><div class="lb-label">작업사항</div><div class="lb-val lb-stages" id="lbv-stage"></div></div>
+          <div class="lb-row"><div class="lb-label">비고</div><div class="lb-val" id="lbv-etc"></div></div>
+        </div>
       </div>
 
       <!-- 미리보기 -->
@@ -307,7 +330,8 @@ select option{background:var(--surface2);}
         </div>
         <div class="ig">
           <div class="il">단지명 <span class="vf" id="lbl-complex">🎤</span></div>
-          <input type="text" id="f-complex" oninput="updateFname()">
+          <input type="text" id="f-complex" list="dl-complex" oninput="updateFname()">
+          <datalist id="dl-complex"></datalist>
         </div>
         <div class="ig">
           <div class="il">동 / 호 <span class="vf" id="lbl-loc">🎤</span></div>
@@ -318,15 +342,18 @@ select option{background:var(--surface2);}
         </div>
         <div class="ig">
           <div class="il">공종 <span class="vf" id="lbl-worktype">🎤</span></div>
-          <input type="text" id="f-worktype" oninput="updateFname()">
+          <input type="text" id="f-worktype" list="dl-worktype" oninput="updateFname()">
+          <datalist id="dl-worktype"></datalist>
         </div>
         <div class="ig">
           <div class="il">위치</div>
-          <input type="text" id="f-location" oninput="updateFname()">
+          <input type="text" id="f-location" list="dl-location" oninput="updateFname()">
+          <datalist id="dl-location"></datalist>
         </div>
         <div class="ig">
           <div class="il">하자내용 <span class="vf" id="lbl-defect">🎤</span></div>
-          <input type="text" id="f-defect" oninput="updateFname()">
+          <input type="text" id="f-defect" list="dl-defect" oninput="updateFname()">
+          <datalist id="dl-defect"></datalist>
         </div>
         <div class="ig">
           <div class="il">촬영 구분 <span class="vf" id="lbl-stage">🎤</span></div>
@@ -398,10 +425,45 @@ select option{background:var(--surface2);}
         </div>
       </div>
       <div class="card">
+        <div class="card-label">목록 관리</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">단지명 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-complex" placeholder="새 단지명 입력">
+            <button class="list-add-btn" onclick="addListItem('complex')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-complex"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공종 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-worktype" placeholder="새 공종 입력">
+            <button class="list-add-btn" onclick="addListItem('worktype')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-worktype"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">위치 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-location" placeholder="새 위치 입력">
+            <button class="list-add-btn" onclick="addListItem('location')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-location"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">하자내용 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-defect" placeholder="새 하자내용 입력">
+            <button class="list-add-btn" onclick="addListItem('defect')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-defect"></div>
+        </div>
+      </div>
+      <div class="card">
         <div class="card-label">옵션</div>
         <div class="set-row">
           <div><div class="set-name">워터마크</div><div class="set-desc">사진 하단 조직명</div></div>
-          <div class="toggle on" id="t-wm" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle on" id="t-wm" onclick="this.classList.toggle('on');renderLiveBoard()"></div>
         </div>
         <div class="set-row">
           <div><div class="set-name">촬영 즉시 자동 업로드</div><div class="set-desc">버튼 없이 바로 전송</div></div>
@@ -436,6 +498,7 @@ const A = {
   activeJobId:null,
   currentStage:'',
   recognition:null, listening:false,
+  lists:{complex:[],worktype:[],location:[],defect:[]},
 };
 const STAGES = ['전','중','후'];
 const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check'};
@@ -861,7 +924,30 @@ function buildFname() {
   const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
   return [base,stagePart].filter(Boolean).join('_')+'.jpg';
 }
-function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); }
+function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
+
+// ════════════════════════
+//  라이브 보드판 (촬영 전 미리보기)
+// ════════════════════════
+function renderLiveBoard(){
+  const v=id=>document.getElementById(id).value;
+  const complex=v('f-complex');
+  const dongHo=[v('f-dong')&&v('f-dong')+'동',v('f-ho')&&v('f-ho')+'호'].filter(Boolean).join(' ');
+  const location=v('f-location');
+  const stage=A.currentStage;
+  const org=document.getElementById('s-org').value;
+  const wmOn=document.getElementById('t-wm').classList.contains('on');
+
+  document.getElementById('lbv-complex').textContent=complex;
+  document.getElementById('lbv-dongho').textContent=dongHo;
+  document.getElementById('lbv-location').textContent=location;
+  document.getElementById('lbv-etc').textContent='';
+  const stages=['전','중','후','점검'];
+  document.getElementById('lbv-stage').innerHTML=stages.map(s=>`<span>${stage===s?'['+s+']':'[ ]'}</span>`).join('');
+
+  const hasAny = complex||dongHo||location||stage;
+  document.getElementById('live-board').classList.toggle('show', !!(hasAny||(wmOn&&org)));
+}
 
 // ════════════════════════
 //  음성 인식
@@ -953,6 +1039,33 @@ function saveSet(){
 function saveAll(){
   try{ localStorage.setItem('fb4_jobs',JSON.stringify(A.jobs)); }catch(e){}
 }
+
+// ════════════════════════
+//  목록 관리 (단지명/공종/위치/하자내용)
+// ════════════════════════
+function addListItem(key){
+  const input=document.getElementById('nl-'+key);
+  const val=input.value.trim();
+  if(!val) return;
+  if(!A.lists[key].includes(val)) A.lists[key].push(val);
+  input.value='';
+  saveLists(); renderLists();
+}
+function removeListItem(key,val){
+  A.lists[key]=A.lists[key].filter(v=>v!==val);
+  saveLists(); renderLists();
+}
+function saveLists(){
+  try{ localStorage.setItem('fb4_lists',JSON.stringify(A.lists)); }catch(e){}
+}
+function renderLists(){
+  ['complex','worktype','location','defect'].forEach(key=>{
+    document.getElementById('dl-'+key).innerHTML = A.lists[key].map(v=>`<option value="${v}"></option>`).join('');
+    document.getElementById('chips-'+key).innerHTML = A.lists[key].map(v=>
+      `<div class="chip">${v}<button onclick="removeListItem('${key}','${v.replace(/'/g,"\\'")}')">✕</button></div>`
+    ).join('');
+  });
+}
 function loadAll(){
   try{
     const c=JSON.parse(localStorage.getItem('fb4_cfg')||'{}');
@@ -960,7 +1073,10 @@ function loadAll(){
     if(c.folder) document.getElementById('s-folder').value=c.folder;
     if(c.org) document.getElementById('s-org').value=c.org;
     A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
+    const savedLists=JSON.parse(localStorage.getItem('fb4_lists')||'{}');
+    ['complex','worktype','location','defect'].forEach(k=>{ A.lists[k]=savedLists[k]||[]; });
   }catch(e){}
+  renderLists();
 }
 function copyCode(){ navigator.clipboard.writeText(document.getElementById('gas-code').textContent).then(()=>showToast('📋 코드 복사됨')).catch(()=>showToast('직접 선택해서 복사','warn')); }
 
