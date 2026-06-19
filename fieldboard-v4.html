@@ -952,11 +952,12 @@ function buildFname() {
 }
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
-  const rawAll=el.value.replace(/\D/g,'');
-  // 7~8번째 자리는 자동으로 끼워넣은 "44"라서, 진짜 입력값 계산에서는 항상 제외
-  const digits=(rawAll.length>6 ? rawAll.slice(0,6)+rawAll.slice(8) : rawAll).slice(0,11);
-  const part1=digits.slice(0,6), part2=digits.slice(6,11);
-  el.value = digits.length>6 ? `${part1}-44-${part2}` : part1;
+  const digits=el.value.replace(/\D/g,'').slice(0,13);
+  const part1=digits.slice(0,6), part2=digits.slice(6,8), part3=digits.slice(8,13);
+  let out=part1;
+  if(digits.length>6) out+='-'+part2;
+  if(digits.length>8) out+='-'+part3;
+  el.value=out;
   updateFname();
 }
 
