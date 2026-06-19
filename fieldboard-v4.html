@@ -42,7 +42,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 /* ── 카메라 ── */
 .cam-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;background:#000;margin-bottom:8px;}
-#live-video{width:100%;display:block;aspect-ratio:2.174;object-fit:cover;}
+#live-video{width:100%;display:block;aspect-ratio:1.5;object-fit:cover;}
 #snap-canvas{display:none;}
 .corners{position:absolute;inset:0;pointer-events:none;}
 .c{position:absolute;width:16px;height:16px;}
@@ -507,7 +507,7 @@ const A = {
   listening:false,
   lists:{complex:[],worktype:[],location:[],defect:[]},
 };
-const CAM_RATIO = 2.174; // CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
+const CAM_RATIO = 1.5; // ✏️ 변경: 2.174→1.5, 화면/사진 세로 범위 확대. CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
 const STAGES = ['전','중','후'];
 const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check'};
 const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#4f8ef7',done:'#b088f7'};
