@@ -66,10 +66,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 /* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
 .live-board{position:absolute;left:0;bottom:0;width:30%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
 .live-board.show{display:block;}
-.lb-row{display:flex;border-bottom:1px solid #000;}
+.lb-row{display:flex;border-bottom:1px solid #000;overflow:hidden;}
 .lb-row:last-child{border-bottom:none;}
-.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;font-size:7px;padding:2px 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
-.lb-val{flex:1;background:#fff;color:#000;font-weight:700;font-size:7px;padding:2px 3px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;padding:0 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
+.lb-val{flex:1;background:#fff;color:#000;font-weight:700;padding:0 3px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .lb-val.lb-stages{padding:0;}
 .lb-stages span{flex:1;text-align:center;}
 .lightbox{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
@@ -537,7 +537,9 @@ async function startCam() {
     A.stream = await navigator.mediaDevices.getUserMedia({
       video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}, audio:false
     });
-    document.getElementById('live-video').srcObject = A.stream;
+    const vid=document.getElementById('live-video');
+    vid.srcObject = A.stream;
+    vid.onloadedmetadata = syncLiveBoardSize;
     show('cam-wrap'); hide('preview-wrap');
     show('cam-controls'); hide('after-shoot');
   } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
@@ -965,6 +967,16 @@ function renderLiveBoard(){
   document.getElementById('lbv-etc').textContent='';
   const stages=['전','중','후','점검'];
   document.getElementById('lbv-stage').innerHTML=stages.map(s=>`<span>${stage===s?'['+s+']':'[ ]'}</span>`).join('');
+  syncLiveBoardSize();
+}
+function syncLiveBoardSize(){
+  const vid=document.getElementById('live-video');
+  const h=vid.clientHeight;
+  if(!h) return;
+  // 사진(캔버스)에 그리는 표와 똑같은 비율(H*0.024)로 줄 높이를 계산해서 라이브 화면도 동일하게 맞춤
+  const rowH=h*0.024, fs=rowH*0.42;
+  document.querySelectorAll('#live-board .lb-row').forEach(r=>{ r.style.height=rowH+'px'; });
+  document.querySelectorAll('#live-board .lb-label, #live-board .lb-val').forEach(el=>{ el.style.fontSize=fs+'px'; });
 }
 
 // ════════════════════════
