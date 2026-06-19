@@ -68,7 +68,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .live-board.show{display:block;}
 .lb-row{display:flex;border-bottom:1px solid #000;overflow:hidden;}
 .lb-row:last-child{border-bottom:none;}
-.lb-label{width:34%;background:#dcdcdc;color:#000;font-weight:700;padding:0 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
+.lb-label{width:34%;background:#fff;color:#000;font-weight:700;padding:0 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
 .lb-val{flex:1;background:#fff;color:#000;font-weight:700;padding:0 3px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .lb-val.lb-stages{padding:0;}
 .lb-stages span{flex:1;text-align:center;}
@@ -76,6 +76,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .lightbox.show{display:flex;}
 .lightbox img{max-width:100%;max-height:85vh;border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 .lightbox-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+/* ── 촬영 확인 모달 ── */
+.confirm-modal{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
+.confirm-modal.show{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;width:100%;max-width:320px;}
+.confirm-title{font-size:13px;color:var(--text2);font-weight:700;margin-bottom:8px;}
+.confirm-fname{font-size:13px;color:var(--accent2);font-family:'JetBrains Mono',monospace;word-break:break-all;background:var(--surface2);border-radius:var(--rs);padding:10px;margin-bottom:14px;}
+.confirm-btns{display:flex;gap:8px;}
+.confirm-btns button{flex:1;padding:11px;border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:1px solid var(--border);}
+.confirm-go{background:var(--accent);color:#fff;border-color:var(--accent);}
+.confirm-back{background:var(--surface2);color:var(--text2);}
 
 /* ── 목록 드롭다운 (촬영 탭) ── */
 .dd-toggle{width:38px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
@@ -295,7 +306,8 @@ select option{background:var(--surface2);}
 
       <!-- 촬영 컨트롤 -->
       <div class="cam-controls" id="cam-controls">
-        <div class="shutter" onclick="shoot()">📷</div>
+        <div class="side-btn" onclick="shoot()" title="예외(정보 없이 촬영)">⚡</div>
+        <div class="shutter" onclick="checkAndShoot()">📷</div>
       </div>
 
       <!-- 저장/재촬영 -->
@@ -497,6 +509,17 @@ select option{background:var(--surface2);}
 
 <div class="toast" id="toast"></div>
 
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title">이 파일명으로 촬영하시겠습니까?</div>
+    <div class="confirm-fname" id="confirm-fname-val">—</div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="cancelShootConfirm()">돌아가기</button>
+      <button class="confirm-go" onclick="confirmShoot()">촬영</button>
+    </div>
+  </div>
+</div>
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <div class="lightbox-close" onclick="closeLightbox()">✕</div>
   <img id="lightbox-img" src="" onclick="event.stopPropagation()">
@@ -554,6 +577,20 @@ async function startCam() {
   } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
 }
 
+const REQUIRED_FIELDS=[
+  ['f-receipt','접수번호'],['f-complex','단지명'],['f-dong','동'],['f-ho','호'],
+  ['f-worktype','공종'],['f-location','위치'],['f-defect','하자내용'],
+];
+function checkAndShoot(){
+  for(const [id,label] of REQUIRED_FIELDS){
+    if(!document.getElementById(id).value.trim()){ showToast(label+' 항목이 비어있습니다','warn'); return; }
+  }
+  if(!A.currentStage){ showToast('촬영 구분을 선택해주세요','warn'); return; }
+  document.getElementById('confirm-fname-val').textContent=buildFname();
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function cancelShootConfirm(){ document.getElementById('confirm-modal').classList.remove('show'); }
+function confirmShoot(){ document.getElementById('confirm-modal').classList.remove('show'); shoot(); }
 function shoot() {
   const vid=document.getElementById('live-video');
   const snp=document.getElementById('snap-canvas');
@@ -604,7 +641,7 @@ function compositeOverlay(canvas, cb) {
 
   ROWS.forEach(([label,val],i)=>{
     const y=y0+i*rowH;
-    ctx.fillStyle='#dcdcdc'; ctx.fillRect(x0,y,labelW,rowH);
+    ctx.fillStyle='#fff'; ctx.fillRect(x0,y,labelW,rowH); // ✏️ 변경: 라벨 배경 회색→흰색
     ctx.fillStyle='#fff';    ctx.fillRect(x0+labelW,y,valueW,rowH);
     ctx.strokeRect(x0,y,labelW,rowH);
     ctx.strokeRect(x0+labelW,y,valueW,rowH);
