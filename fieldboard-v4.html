@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>현장보드판</title>
+<title>써비의 현장보드판</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
 :root{
@@ -160,7 +160,8 @@ select option{background:var(--surface2);}
 .job-card.is-done{border-color:rgba(79,202,135,0.3);}
 
 .job-top{display:flex;align-items:center;padding:12px 13px 8px;gap:10px;}
-.job-icon-wrap{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.job-del-btn{width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.job-del-btn:active{border-color:var(--danger);color:var(--danger);}
 .job-meta{flex:1;min-width:0;}
 .job-title{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .job-loc{font-size:11px;color:var(--text3);margin-top:2px;}
@@ -180,11 +181,6 @@ select option{background:var(--surface2);}
 .pt-label.done{color:var(--text2);}
 
 /* 진행 연결선 */
-.progress-line{display:flex;align-items:center;padding:0 14px;margin-bottom:8px;}
-.pl-seg{flex:1;height:2px;background:var(--border);border-radius:1px;}
-.pl-seg.filled-before{background:#7ec8a0;}
-.pl-seg.filled-during{background:var(--accent2);}
-.pl-seg.filled-after{background:var(--success);}
 
 /* 불러오기 버튼 */
 .job-action-row{display:flex;gap:6px;padding:0 13px 12px;}
@@ -245,7 +241,7 @@ select option{background:var(--surface2);}
 <div id="app">
 
   <div class="header">
-    <div class="app-title">현장 <span>보드판</span></div>
+    <div class="app-title">써비의 현장 <span>보드판</span></div>
     <div class="drive-badge" id="drive-badge" onclick="goTab('settings',null)">드라이브 미연결</div>
   </div>
 
@@ -851,33 +847,19 @@ function renderJobs() {
       return {s, key, done, isNext};
     });
 
-    // 연결선 색상 (앞 단계가 완료됐을 때)
-    const line1Color = hasShots('전') ? STAGE_COLORS.before : '';
-    const line2Color = hasShots('중') ? STAGE_COLORS.during : '';
-
     return `
     <div class="job-card${allDone?' is-done':''}${isActive?' is-active':''}" id="jc-${job.id}">
       <div class="job-top">
-        <div class="job-icon-wrap">${getJobIcon(job.title)}</div>
         <div class="job-meta">
           <div class="job-title">${job.title}${allDone?'<span class="done-badge">완료</span>':''}</div>
           <div class="job-loc">${job.loc||'위치 미입력'}</div>
           <div class="job-time">${formatTime(job.lastAt)} 마지막 촬영</div>
         </div>
+        <div class="job-del-btn" onclick="deleteJob('${job.id}')">🗑️</div>
       </div>
 
       <!-- ★ 진행 상태 시각화 ★ -->
       <div class="job-progress">
-        <!-- 연결선 -->
-        <div class="progress-line">
-          <div class="pl-seg${line1Color?' filled-before':''}"></div>
-          <div style="width:28px;flex-shrink:0;"></div>
-          <div class="pl-seg${line1Color?' filled-before':''}"></div>
-          <div style="width:28px;flex-shrink:0;"></div>
-          <div class="pl-seg${line2Color?' filled-during':''}"></div>
-          <div style="width:28px;flex-shrink:0;"></div>
-          <div class="pl-seg${line2Color?' filled-during':''}"></div>
-        </div>
         <!-- 도트 -->
         <div class="progress-track">
           ${dots.map(d=>{
@@ -937,6 +919,17 @@ function loadJobWithStage(id, stage, stageKey) {
   showToast('📋 '+job.title+' — '+stage);
 }
 
+function deleteJob(id){
+  const job=A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  const ok=confirm('"'+job.title+(job.loc?' / '+job.loc:'')+'" 작업을 삭제하시겠습니까?\n삭제하면 되돌릴 수 없습니다.');
+  if(!ok) return;
+  A.jobs=A.jobs.filter(j=>j.id!==id);
+  if(A.activeJobId===id) A.activeJobId=null;
+  saveAll();
+  renderJobs();
+  showToast('🗑️ 삭제됨');
+}
 function clearActive() {
   A.activeJobId=null;
   document.getElementById('active-banner').classList.remove('show');
@@ -979,20 +972,6 @@ function renderShotViewer(){
     if(Math.abs(dx)>40) shotViewerMove(dx<0?1:-1);
   });
 })();
-
-// 아이콘 자동 선택
-function getJobIcon(title) {
-  const map = [
-    ['타일','🟫'],['도배','🪟'],['도어','🚪'],['문','🚪'],['욕실','🛁'],
-    ['배관','🪣'],['전기','🔌'],['조명','💡'],['방수','💧'],['유리','🪟'],
-    ['페인트','🎨'],['마루','🪵'],['천장','🏗️'],['창문','🪟'],['열쇠','🔑'],
-    ['잠금','🔑'],['보일러','🔥'],['하수','🪣'],['단열','🧱'],['철거','🔨'],
-  ];
-  for(const [kw, icon] of map) {
-    if(title.includes(kw)) return icon;
-  }
-  return '🔧';
-}
 
 function formatTime(iso) {
   if(!iso) return '';
