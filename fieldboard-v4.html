@@ -313,7 +313,7 @@ select option{background:var(--surface2);}
           <div class="lb-row"><div class="lb-label">위치</div><div class="lb-val" id="lbv-location"></div></div>
           <div class="lb-row"><div class="lb-label">하자내용</div><div class="lb-val" id="lbv-defect"></div></div>
           <div class="lb-row"><div class="lb-label">작업사항</div><div class="lb-val lb-stages" id="lbv-stage"></div></div>
-          <div class="lb-row"><div class="lb-label">물량</div><div class="lb-val" id="lbv-quantity"></div></div>
+          <div class="lb-row"><div class="lb-label">산출식/물량</div><div class="lb-val" id="lbv-quantity"></div></div>
         </div>
       </div>
 
@@ -761,7 +761,9 @@ function compositeOverlay(canvas, cb) {
 
   const defect=v('f-defect');
   const quantity=v('f-quantity');
-  const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['하자내용',defect],['작업사항',null],['물량',quantity]];
+  const formula=v('f-formula');
+  const formulaQty=formula?formula+'='+quantity:quantity; // ✏️ 변경: 산출식이 있으면 "산출식=물량" 형태로 표시
+  const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['하자내용',defect],['작업사항',null],['산출식/물량',formulaQty]];
   const tableW=W*0.36, labelW=tableW*0.34, valueW=tableW-labelW; // ✏️ 변경: 표 너비 10% 축소(0.4→0.36)
   const rowH=H*0.06075, x0=0, y0=H-ROWS.length*rowH; // ✏️ 변경: 표 높이 10% 축소(0.0675→0.06075)
   const fs=rowH*0.42;
@@ -1562,7 +1564,8 @@ function voiceForFormula(){
 function calcFormula(el){
   // ➕ 추가: 산출식("(2*2)*2.3-(1*1)" 등)을 계산해서 물량 칸에 결과를 자동으로 채움
   const expr=el.value.trim();
-  if(!expr || !/^[0-9+\-*/(). ]+$/.test(expr)) return; // 숫자/사칙연산/괄호 외 글자가 있으면 계산 안 함(안전장치)
+  if(!expr){ document.getElementById('f-quantity').value=''; updateFname(); return; } // ✏️ 변경: 산출식 지우면 물량도 같이 비움
+  if(!/^[0-9+\-*/(). ]+$/.test(expr)) return; // 숫자/사칙연산/괄호 외 글자가 있으면 계산 안 함(안전장치)
   try{
     const result=Function('"use strict";return ('+expr+')')();
     if(typeof result==='number' && isFinite(result)){
@@ -1594,13 +1597,14 @@ function renderLiveBoard(){
   const location=v('f-location');
   const defect=v('f-defect');
   const quantity=v('f-quantity');
+  const formula=v('f-formula');
   const stage=A.currentStage;
 
   document.getElementById('lbv-complex').textContent=complex;
   document.getElementById('lbv-dongho').textContent=dongHo;
   document.getElementById('lbv-location').textContent=location;
   document.getElementById('lbv-defect').textContent=defect;
-  document.getElementById('lbv-quantity').textContent=quantity;
+  document.getElementById('lbv-quantity').textContent=formula?formula+'='+quantity:quantity; // ✏️ 변경: 산출식이 있으면 "산출식=물량" 형태로 표시
   const stages=['전','중','후','점검'];
   document.getElementById('lbv-stage').innerHTML=stages.map(s=>`<span>${stage===s?'['+s+']':'[ ]'}</span>`).join('');
   syncLiveBoardSize();
