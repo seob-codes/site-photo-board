@@ -79,6 +79,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .marker-color-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;}
 .marker-color-btn.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent);}
 .marker-size-btn{width:26px;height:26px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:14px;cursor:pointer;}
+.marker-resize-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid #fff;pointer-events:auto;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.tap-marker .marker-content{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
 
 /* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
 .live-board{position:absolute;left:0;bottom:0;width:36%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
@@ -323,7 +325,9 @@ select option{background:var(--surface2);}
       <div class="cam-wrap" id="cam-wrap" onclick="placeTapMarker(event)">
         <video id="live-video" autoplay playsinline muted></video>
         <canvas id="snap-canvas" style="display:none"></canvas>
-        <div class="tap-marker" id="tap-marker"></div>
+        <div class="tap-marker" id="tap-marker">
+          <div class="marker-resize-handle" id="marker-resize-handle"></div>
+        </div>
         <div class="corners">
           <div class="c c-tl"></div><div class="c c-tr"></div>
           <div class="c c-bl"></div><div class="c c-br"></div>
@@ -370,10 +374,8 @@ select option{background:var(--surface2);}
           <div class="marker-color-btn" style="background:#f7a84f;" onclick="setMarkerColor('#f7a84f',this)"></div>
           <div class="marker-color-btn" style="background:#4fca87;" onclick="setMarkerColor('#4fca87',this)"></div>
           <div class="marker-color-btn" style="background:#000;" onclick="setMarkerColor('#000',this)"></div>
-          <span style="flex:1;"></span>
-          <button class="marker-size-btn" onclick="adjustMarkerSize(-4)">－</button>
-          <span id="marker-size-val" style="font-size:11px;color:var(--text2);width:30px;text-align:center;display:inline-block;">28</span>
-          <button class="marker-size-btn" onclick="adjustMarkerSize(4)">＋</button>
+          <span style="flex:1;font-size:10px;color:var(--text3);">마커의 ↘ 손잡이를 끌면 크기/모양 조절</span>
+          <button class="marker-size-btn" style="width:auto;padding:0 8px;color:var(--danger);" onclick="clearTapMarker()">지우기</button>
         </div>
       </div>
 
@@ -734,7 +736,7 @@ const A = {
   jobFilter:'active', // ➕ 추가: 작업목록 필터('active'=진행중, 'done'=완료)
   tapMarker:null, // ➕ 추가: 화면 탭으로 찍은 "공사 위치" 마커({x,y,shape,color,size,text})
   markerMode:false, // ➕ 추가: "마커" 버튼을 눌러야만 탭이 마커로 인식되는 모드
-  markerStyle:{shape:'circle', color:'#ff3b30', size:28}, // ➕ 추가: 현재 선택된 마커 모양/색상/크기
+  markerStyle:{shape:'circle', color:'#ff3b30', width:28, height:28}, // ✏️ 변경: size(숫자1개)→width/height(가로/세로 따로)
 };
 const CAM_RATIO = 1.5; // ✏️ 변경: 2.174→1.5, 화면/사진 세로 범위 확대. CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
 const LICENSE_CHECK_URL = ''; // ➕ 추가: 무단 배포 방지용 승인 확인 주소. 빈 값이면 검사를 건너뜀(개발자가 직접 Apps Script URL을 넣어야 동작)
@@ -936,57 +938,91 @@ function setMarkerColor(color, el){
   el.classList.add('active');
   renderTapMarkerLive();
 }
-function adjustMarkerSize(delta){
-  A.markerStyle.size=Math.max(14, Math.min(60, A.markerStyle.size+delta));
-  document.getElementById('marker-size-val').textContent=A.markerStyle.size;
-  renderTapMarkerLive();
-}
 function renderTapMarkerLive(){
-  // ➕ 추가: 라이브 화면의 마커를 현재 선택된 모양/색상/크기로 다시 그림(실시간 반영)
+  // ✏️ 변경: size(숫자1개) → width/height(가로/세로 따로)로 변경, 타원/늘어난 화살표 등 비대칭 모양 지원
   if(!A.tapMarker) return;
-  const {shape,color,size}=A.markerStyle;
+  const {shape,color,width,height}=A.tapMarker;
   const marker=document.getElementById('tap-marker');
   marker.style.left=(A.tapMarker.x*100)+'%';
   marker.style.top=(A.tapMarker.y*100)+'%';
-  marker.style.width=size+'px'; marker.style.height=size+'px';
+  marker.style.width=width+'px'; marker.style.height=height+'px';
   marker.style.color=color;
-  marker.innerHTML='';
+  const base=28, sx=width/base, sy=height/base;
+  let content='';
   if(shape==='circle'){ marker.style.borderRadius='50%'; marker.style.border='3px solid '+color; marker.style.background=color+'30'; }
   else if(shape==='square'){ marker.style.borderRadius='4px'; marker.style.border='3px solid '+color; marker.style.background=color+'30'; }
-  else if(shape==='arrow'){ marker.style.border='none'; marker.style.background='none'; marker.style.fontSize=size+'px'; marker.textContent='➡️'; }
-  else if(shape==='text'){ marker.style.border='none'; marker.style.background='none'; marker.style.fontSize=Math.max(12,size*0.6)+'px'; marker.textContent=A.tapMarker.text||document.getElementById('marker-text-input').value||''; }
+  else if(shape==='arrow'){ marker.style.border='none'; marker.style.background='none'; content=`<span class="marker-content" style="font-size:${base}px;transform:scale(${sx},${sy});">➡️</span>`; }
+  else if(shape==='text'){ marker.style.border='none'; marker.style.background='none'; const t=A.tapMarker.text||document.getElementById('marker-text-input').value||''; content=`<span class="marker-content" style="font-size:${base*0.6}px;font-weight:700;transform:scale(${sx},${sy});white-space:nowrap;">${t}</span>`; }
+  marker.innerHTML=content+'<div class="marker-resize-handle" id="marker-resize-handle"></div>';
+  setupMarkerResizeHandle();
   marker.classList.add('show');
 }
 function placeTapMarker(e){
   // ✏️ 변경: "마커" 모드가 켜져있을 때만 탭이 마커로 인식됨(평소엔 화면을 자유롭게 탭해도 안전)
   if(!A.markerMode) return;
-  if(e.target.closest && e.target.closest('.last-shot')) return;
+  if(e.target.closest && (e.target.closest('.last-shot')||e.target.closest('.marker-resize-handle'))) return;
   const wrap=document.getElementById('cam-wrap');
   const rect=wrap.getBoundingClientRect();
   const x=(e.clientX-rect.left)/rect.width;
   const y=(e.clientY-rect.top)/rect.height;
-  const {shape,color,size}=A.markerStyle;
+  const {shape,color,width,height}=A.markerStyle;
   const text=document.getElementById('marker-text-input').value;
-  A.tapMarker={x,y,shape,color,size,text};
+  A.tapMarker={x,y,shape,color,width,height,text};
   renderTapMarkerLive();
+}
+const _markerDrag={active:false,startX:0,startY:0,startW:0,startH:0};
+function _markerDragPos(e){ const p=e.touches?e.touches[0]:e; return [p.clientX,p.clientY]; }
+function _markerDragMove(e){
+  if(!_markerDrag.active) return;
+  const [x,y]=_markerDragPos(e);
+  A.tapMarker.width=Math.max(14, _markerDrag.startW+(x-_markerDrag.startX)*2);
+  A.tapMarker.height=Math.max(14, _markerDrag.startH+(y-_markerDrag.startY)*2);
+  A.markerStyle.width=A.tapMarker.width; A.markerStyle.height=A.tapMarker.height;
+  renderTapMarkerLive();
+  e.preventDefault(); e.stopPropagation();
+}
+function _markerDragEnd(e){ _markerDrag.active=false; if(e){ e.preventDefault(); e.stopPropagation(); } }
+document.addEventListener('mousemove',_markerDragMove);
+document.addEventListener('touchmove',_markerDragMove,{passive:false});
+document.addEventListener('mouseup',_markerDragEnd);
+document.addEventListener('touchend',_markerDragEnd);
+function setupMarkerResizeHandle(){
+  // ✏️ 변경: 핸들 누르기 이벤트만 매번 다시 연결(문서 전체 리스너는 위에서 한 번만 등록해 중복 방지)
+  const handle=document.getElementById('marker-resize-handle');
+  if(!handle) return;
+  const start=e=>{
+    _markerDrag.active=true;
+    [_markerDrag.startX,_markerDrag.startY]=_markerDragPos(e);
+    _markerDrag.startW=A.tapMarker.width; _markerDrag.startH=A.tapMarker.height;
+    e.preventDefault(); e.stopPropagation();
+  };
+  handle.onmousedown=start; handle.ontouchstart=start;
 }
 function clearTapMarker(){
   A.tapMarker=null;
   document.getElementById('tap-marker').classList.remove('show');
 }
 function drawTapMarkerOnCanvas(ctx, W, H){
-  // ✏️ 변경: 모양(원/네모/화살표/텍스트)+색상+크기를 반영해서 사진에도 합성
+  // ✏️ 변경: width/height(가로세로 따로)를 반영해서 타원/늘어난 모양으로 사진에도 합성
   if(!A.tapMarker) return;
-  const {x,y,shape,color,size,text}=A.tapMarker;
+  const {x,y,shape,color,width,height,text}=A.tapMarker;
   const cx=x*W, cy=y*H;
   const scale=W/document.getElementById('cam-wrap').clientWidth; // 화면 px 크기를 사진 해상도 비율로 변환
-  const r=(size/2)*scale;
+  const rx=(width/2)*scale, ry=(height/2)*scale;
   ctx.save();
-  ctx.strokeStyle=color; ctx.fillStyle=color+'30'; ctx.lineWidth=Math.max(3,r*0.18);
-  if(shape==='circle'){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
-  else if(shape==='square'){ ctx.fillRect(cx-r,cy-r,r*2,r*2); ctx.strokeRect(cx-r,cy-r,r*2,r*2); }
-  else if(shape==='arrow'){ ctx.font=`${size*scale}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color; ctx.fillText('➡️',cx,cy); }
-  else if(shape==='text'){ ctx.font=`bold ${Math.max(12,size*0.6)*scale}px 'Noto Sans KR',sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color; ctx.fillText(text||'',cx,cy); }
+  ctx.strokeStyle=color; ctx.fillStyle=color+'30'; ctx.lineWidth=Math.max(3,Math.min(rx,ry)*0.18);
+  if(shape==='circle'){ ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  else if(shape==='square'){ ctx.fillRect(cx-rx,cy-ry,rx*2,ry*2); ctx.strokeRect(cx-rx,cy-ry,rx*2,ry*2); }
+  else if(shape==='arrow'){
+    ctx.translate(cx,cy); ctx.scale((width/28), (height/28));
+    ctx.font=`${28*scale}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color;
+    ctx.fillText('➡️',0,0);
+  }
+  else if(shape==='text'){
+    ctx.translate(cx,cy); ctx.scale((width/28), (height/28));
+    ctx.font=`bold ${28*0.6*scale}px 'Noto Sans KR',sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color;
+    ctx.fillText(text||'',0,0);
+  }
   ctx.restore();
 }
 function retake(){ A.compositeDataUrl=null; clearTapMarker(); startCam(); }
