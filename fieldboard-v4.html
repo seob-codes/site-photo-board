@@ -160,6 +160,9 @@ select option{background:var(--surface2);}
 .job-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .job-list-title{font-size:14px;font-weight:700;}
 .job-count-badge{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.job-filter-tabs{display:flex;gap:6px;}
+.job-filter-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;}
+.job-filter-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
 /* 작업 카드 */
 .job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:border-color 0.2s;}
@@ -271,6 +274,10 @@ select option{background:var(--surface2);}
     <div class="screen" id="tab-jobs">
       <div class="job-list-header">
         <div class="job-list-title">작업 목록</div>
+        <div class="job-filter-tabs">
+          <div class="job-filter-tab active" id="jf-active" onclick="setJobFilter('active')">진행중</div>
+          <div class="job-filter-tab" id="jf-done" onclick="setJobFilter('done')">완료</div>
+        </div>
         <div class="job-count-badge" id="job-count">0건</div>
       </div>
       <div id="job-list">
@@ -654,6 +661,7 @@ const A = {
   currentStage:'',
   listening:false,
   lists:{complex:[],worktype:[],location:[],defect:[]},
+  jobFilter:'active', // ➕ 추가: 작업목록 필터('active'=진행중, 'done'=완료)
 };
 const CAM_RATIO = 1.5; // ✏️ 변경: 2.174→1.5, 화면/사진 세로 범위 확대. CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
 const STAGES = ['전','중','후'];
@@ -911,16 +919,23 @@ function getOrCreateJob(meta) {
   return job;
 }
 
+function setJobFilter(filter){
+  A.jobFilter=filter;
+  document.getElementById('jf-active').classList.toggle('active', filter==='active');
+  document.getElementById('jf-done').classList.toggle('active', filter==='done');
+  renderJobs();
+}
 function renderJobs() {
   const list = document.getElementById('job-list');
-  // ✏️ 변경: 전/중/후 다 끝난 작업은 목록에서 제외(데이터는 A.jobs에 그대로 보존, 화면 표시만 숨김)
-  const visibleJobs = A.jobs.filter(job=>!STAGES.every(s=>job.shots[s]&&job.shots[s].length));
+  // ✏️ 변경: 완료된 작업을 무조건 숨기지 않고, 필터("진행중"/"완료")에 따라 보여줄 목록을 나눔
+  const isDone = job=>STAGES.every(s=>job.shots[s]&&job.shots[s].length);
+  const visibleJobs = A.jobs.filter(job=> A.jobFilter==='done' ? isDone(job) : !isDone(job));
   document.getElementById('job-count').textContent = visibleJobs.length+'건';
 
   if(!visibleJobs.length) {
     list.innerHTML=`<div class="empty-state">
       <div class="empty-icon">📋</div>
-      <div class="empty-text">촬영 탭에서 사진을 찍으면<br>여기에 자동으로 쌓입니다</div>
+      <div class="empty-text">${A.jobFilter==='done' ? '완료된 작업이 아직 없습니다' : '촬영 탭에서 사진을 찍으면<br>여기에 자동으로 쌓입니다'}</div>
     </div>`;
     return;
   }
