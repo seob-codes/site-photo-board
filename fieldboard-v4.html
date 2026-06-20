@@ -981,7 +981,11 @@ function _markerDragMove(e){
   renderTapMarkerLive();
   e.preventDefault(); e.stopPropagation();
 }
-function _markerDragEnd(e){ _markerDrag.active=false; if(e){ e.preventDefault(); e.stopPropagation(); } }
+function _markerDragEnd(e){
+  if(!_markerDrag.active) return; // ✏️ 변경: 드래그 중이 아니면 아무것도 막지 않음(이게 없어서 모든 클릭/터치가 막혔던 버그)
+  _markerDrag.active=false;
+  e.preventDefault(); e.stopPropagation();
+}
 document.addEventListener('mousemove',_markerDragMove);
 document.addEventListener('touchmove',_markerDragMove,{passive:false});
 document.addEventListener('mouseup',_markerDragEnd);
