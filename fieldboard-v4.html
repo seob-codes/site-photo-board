@@ -401,7 +401,8 @@ select option{background:var(--surface2);}
         <div class="ig">
           <div class="il">산출식</div>
           <div class="ir">
-            <input type="text" id="f-formula" placeholder="예) (2*2)*2.3-(1*1)" oninput="calcFormula(this)">
+            <input type="text" id="f-formula" oninput="calcFormula(this)">
+            <button class="mic-mini" id="mic-formula" onclick="voiceForFormula()">🎤</button>
           </div>
         </div>
         <div class="ig">
@@ -1536,6 +1537,27 @@ async function applySignature(role, name, sigDataUrl){
   await drawCertificate(canvas, _pendingCert.meta, _pendingCert.sig);
   _pendingCert.dataUrl=canvas.toDataURL('image/jpeg',0.92);
   document.getElementById('cert-preview-img').src=_pendingCert.dataUrl;
+}
+function voiceForFormula(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-formula');
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 산출식을 말씀하세요 (예: "2 곱하기 2")');
+  rec.onresult=(e)=>{
+    let text=e.results[0][0].transcript.trim();
+    text=text.replace(/곱하기/g,'*').replace(/나누기/g,'/').replace(/더하기/g,'+').replace(/빼기/g,'-').replace(/\s+/g,'');
+    const el=document.getElementById('f-formula');
+    el.value=text;
+    calcFormula(el);
+  };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
 }
 function calcFormula(el){
   // ➕ 추가: 산출식("(2*2)*2.3-(1*1)" 등)을 계산해서 물량 칸에 결과를 자동으로 채움
