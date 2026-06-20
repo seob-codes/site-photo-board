@@ -471,26 +471,26 @@ select option{background:var(--surface2);}
         <div class="card-label">파일명 설정</div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">조직명 (워터마크)</label>
-          <input type="text" id="s-org" placeholder="예) ○○건설" oninput="saveSet()">
+          <input type="text" id="s-org" oninput="saveSet()">
         </div>
       </div>
       <div class="card">
         <div class="card-label">완료확인서 정보</div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공사명</label>
-          <input type="text" id="s-projectname" placeholder="예) LHQ+ 파주1권 건설임대주택 유지보수공사 [건축]" oninput="saveSet()">
+          <input type="text" id="s-projectname" oninput="saveSet()">
         </div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">보수 업체</label>
-          <input type="text" id="s-contractor" placeholder="예) (주)신영씨앤디 / (주)지용종합건설" oninput="saveSet()">
+          <input type="text" id="s-contractor" oninput="saveSet()">
         </div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">작업자</label>
-          <input type="text" id="s-worker" placeholder="예) 홍길동" oninput="saveSet()">
+          <input type="text" id="s-worker" oninput="saveSet()">
         </div>
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">현장대리인</label>
-          <input type="text" id="s-manager" placeholder="예) 김태섭" oninput="saveSet()">
+          <input type="text" id="s-manager" oninput="saveSet()">
         </div>
       </div>
       <div class="card">
@@ -498,7 +498,7 @@ select option{background:var(--surface2);}
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">단지명 목록</label>
           <div class="ir">
-            <input type="text" id="nl-complex" placeholder="새 단지명 입력">
+            <input type="text" id="nl-complex">
             <button class="list-add-btn" onclick="addListItem('complex')">추가</button>
           </div>
           <div class="chip-wrap" id="chips-complex"></div>
@@ -506,7 +506,7 @@ select option{background:var(--surface2);}
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공종 목록</label>
           <div class="ir">
-            <input type="text" id="nl-worktype" placeholder="새 공종 입력">
+            <input type="text" id="nl-worktype">
             <button class="list-add-btn" onclick="addListItem('worktype')">추가</button>
           </div>
           <div class="chip-wrap" id="chips-worktype"></div>
@@ -514,7 +514,7 @@ select option{background:var(--surface2);}
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">위치 목록</label>
           <div class="ir">
-            <input type="text" id="nl-location" placeholder="새 위치 입력">
+            <input type="text" id="nl-location">
             <button class="list-add-btn" onclick="addListItem('location')">추가</button>
           </div>
           <div class="chip-wrap" id="chips-location"></div>
@@ -522,7 +522,7 @@ select option{background:var(--surface2);}
         <div class="ig">
           <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">하자내용 목록</label>
           <div class="ir">
-            <input type="text" id="nl-defect" placeholder="새 하자내용 입력">
+            <input type="text" id="nl-defect">
             <button class="list-add-btn" onclick="addListItem('defect')">추가</button>
           </div>
           <div class="chip-wrap" id="chips-defect"></div>
