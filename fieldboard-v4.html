@@ -884,7 +884,7 @@ function getOrCreateJob(meta) {
     job = {
       id: 'j'+Date.now(),
       key,
-      title: meta.worktype||'미입력',
+      title: meta.defect||'미입력', // ✏️ 변경: 카드 제목을 공종→하자내용으로 변경
       loc:   [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' '),
       complex: meta.complex||'', dong: meta.dong||'', ho: meta.ho||'',
       worktype: meta.worktype||'', location: meta.location||'', defect: meta.defect||'', receipt: meta.receipt||'',
@@ -895,7 +895,7 @@ function getOrCreateJob(meta) {
     };
     A.jobs.unshift(job);
   } else {
-    job.title = meta.worktype||job.title;
+    job.title = meta.defect||job.title; // ✏️ 변경: 카드 제목을 공종→하자내용으로 변경
     job.loc = [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
     job.complex=meta.complex||job.complex; job.dong=meta.dong||job.dong; job.ho=meta.ho||job.ho;
     job.worktype=meta.worktype||job.worktype; job.location=meta.location||job.location;
