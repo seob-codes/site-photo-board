@@ -1330,7 +1330,7 @@ function getFieldMeta() {
   const v=id=>document.getElementById(id).value.trim();
   return {
     receipt:v('f-receipt'), complex:v('f-complex'), dong:v('f-dong'), ho:v('f-ho'),
-    worktype:v('f-worktype'), location:v('f-location'), defect:v('f-defect'),
+    worktype:v('f-worktype'), location:v('f-location'), defect:v('f-defect'), quantity:v('f-quantity'),
   };
 }
 function nextSeqFor(meta, stage) {
@@ -1396,7 +1396,7 @@ function buildCertFname(meta, seq){
   const seqStr=String(seq).padStart(3,'0');
   return [base,'완료확인서',seqStr].filter(Boolean).join('_')+'.jpg';
 }
-function wrapCertText(ctx,text,x,y,maxWidth,lineHeight){
+function wrapCertText(ctx,text,x,y,maxWidth,lineHeight,center){
   if(!text) return;
   const chars=text.split('');
   let line='';
@@ -1407,7 +1407,23 @@ function wrapCertText(ctx,text,x,y,maxWidth,lineHeight){
     else line=test;
   });
   if(line) lines.push(line);
-  lines.forEach((l,i)=>ctx.fillText(l, x, y+i*lineHeight));
+  if(center){ ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, x+maxWidth/2, y+i*lineHeight)); ctx.textAlign='left'; } // ✏️ 변경: 가운데 정렬 지원
+  else lines.forEach((l,i)=>ctx.fillText(l, x, y+i*lineHeight));
+}
+function drawVerticalStamp(ctx,name,cx,cy,size){
+  // ➕ 추가: 이름을 세로로 한 글자씩 써서 도장처럼 보이게 그림(빨간 사각 테두리)
+  if(!name) return;
+  ctx.save();
+  ctx.strokeStyle='#c0392b'; ctx.lineWidth=2;
+  ctx.strokeRect(cx-size/2, cy-size/2, size, size);
+  ctx.fillStyle='#c0392b';
+  ctx.font="bold 14px 'Noto Sans KR',sans-serif";
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const chars=name.split('').slice(0,4);
+  const lineH=size/(chars.length+0.6);
+  const startY=cy-(chars.length-1)*lineH/2;
+  chars.forEach((ch,i)=>ctx.fillText(ch, cx, startY+i*lineH));
+  ctx.restore();
 }
 function loadImg(src){
   return new Promise((resolve,reject)=>{
@@ -1440,9 +1456,9 @@ async function drawCertificate(canvas, meta, sig){
   const dongHo=[meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
   const today=new Date();
   const dateStr=today.getFullYear()+'년 '+(today.getMonth()+1)+'월 '+today.getDate()+'일';
-  const repairContent=[meta.worktype,meta.location,meta.defect].filter(Boolean).join(' / ');
+  const repairContent=[meta.location,meta.defect,meta.quantity].filter(Boolean).join(' / '); // ✏️ 변경: 공종-위치-하자내용 → 위치-하자내용-물량
 
-  function row(label, value, rowH, valueFont){
+  function row(label, value, rowH, center){
     ctx.fillStyle='#eee';
     ctx.fillRect(x0,y,labelW,rowH);
     ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
@@ -1452,9 +1468,9 @@ async function drawCertificate(canvas, meta, sig){
     ctx.font="bold 18px 'Noto Sans KR',sans-serif";
     ctx.textAlign='center';
     ctx.fillText(label, x0+labelW/2, y+(rowH>60?28:rowH/2));
-    ctx.font=(valueFont||"18px 'Noto Sans KR',sans-serif");
+    ctx.font="18px 'Noto Sans KR',sans-serif";
     ctx.textAlign='left';
-    if(rowH>60){ wrapCertText(ctx, value, x0+labelW+16, y+34, valueW-32, 26); }
+    if(rowH>60){ wrapCertText(ctx, value, x0+labelW+16, y+34, valueW-32, 26, center); } // ✏️ 변경: center 옵션 추가
     else { ctx.fillText(value, x0+labelW+16, y+rowH/2); }
     y+=rowH;
   }
@@ -1463,12 +1479,12 @@ async function drawCertificate(canvas, meta, sig){
   row('보수 업체', contractor, 50);
   row('접 수 번 호', meta.receipt||'', 50);
   row('단지명 (동,호)', (meta.complex||'')+' '+dongHo, 50);
-  row('접 수 내 용', meta.defect||'', 100);
-  row('보 수 내 용', repairContent, 130);
+  row('접 수 내 용', meta.defect||'', 100, true); // ✏️ 변경: 가운데 정렬
+  row('보 수 내 용', repairContent, 130, true); // ✏️ 변경: 가운데 정렬
   row('보수완료일', dateStr, 50);
 
   // 작업자 / 현장대리인 (한 줄에 2칸씩)
-  const halfLabelW=110, halfW=tableW/2;
+  const halfLabelW=labelW, halfW=tableW/2; // ✏️ 변경: 위 보수완료일 라벨과 너비를 맞춰 세로선이 일치하도록
   ctx.fillStyle='#eee';
   ctx.fillRect(x0,y,halfLabelW,50);
   ctx.fillRect(x0+halfW,y,halfLabelW,50);
@@ -1482,7 +1498,8 @@ async function drawCertificate(canvas, meta, sig){
   ctx.fillText('현장대리인', x0+halfW+halfLabelW/2, y+25);
   ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
   ctx.fillText(worker, x0+halfLabelW+14, y+25);
-  ctx.fillText(manager+(manager?' (인)':''), x0+halfW+halfLabelW+14, y+25);
+  ctx.fillText(manager, x0+halfW+halfLabelW+14, y+25); // ✏️ 변경: "(인)" 글자 대신 세로형 도장으로 대체
+  drawVerticalStamp(ctx, manager, x0+tableW-36, y+25, 40); // ➕ 추가: 현장대리인 이름을 세로로 쓴 도장 모양으로 날인
   y+=80;
 
   ctx.font="17px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
@@ -1493,16 +1510,17 @@ async function drawCertificate(canvas, meta, sig){
   y+=70;
 
   ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
-  const tenantY=y, officeY=y+50;
-  ctx.fillText('확인자(입주자)  :', x0+200, tenantY);
-  if(sig&&sig.tenantName) ctx.fillText(sig.tenantName, x0+370, tenantY);
-  ctx.fillText('(인)', x0+tableW-150, tenantY);
-  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, x0+tableW-175, tenantY-25, 80,50); } // ✏️ 변경: (인) 글자에 겹치도록 위치 조정
+  const confirmLabelX=x0+120, confirmNameX=x0+330, confirmSealX=x0+420; // ✏️ 변경: 이름~(인) 사이 빈 간격을 줄이기 위해 좌표를 좁게 재배치
+  const tenantY=y, officeY=y+58; // ✏️ 변경: 두 줄 사이 간격(50→58)
+  ctx.fillText('확인자(입주자)  :', confirmLabelX, tenantY);
+  if(sig&&sig.tenantName) ctx.fillText(sig.tenantName, confirmNameX, tenantY);
+  ctx.fillText('(인)', confirmSealX, tenantY);
+  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, confirmSealX-25, tenantY-25, 80,50); }
 
-  ctx.fillText('확인자(관리소)  :', x0+200, officeY);
-  if(sig&&sig.officeName) ctx.fillText(sig.officeName, x0+370, officeY);
-  ctx.fillText('(인)', x0+tableW-150, officeY);
-  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, x0+tableW-175, officeY-25, 80,50); } // ✏️ 변경: (인) 글자에 겹치도록 위치 조정
+  ctx.fillText('확인자(관리소)  :', confirmLabelX, officeY);
+  if(sig&&sig.officeName) ctx.fillText(sig.officeName, confirmNameX, officeY);
+  ctx.fillText('(인)', confirmSealX, officeY);
+  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, confirmSealX-25, officeY-25, 80,50); }
 }
 let _pendingCert=null;
 async function generateCertificate(){
