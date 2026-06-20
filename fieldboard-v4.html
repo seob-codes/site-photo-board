@@ -361,7 +361,7 @@ select option{background:var(--surface2);}
         <div class="ig">
           <div class="il">접수번호</div>
           <div class="ir">
-            <input type="text" id="f-receipt" inputmode="numeric" oninput="formatReceipt(this)">
+            <input type="text" id="f-receipt" oninput="formatReceipt(this)">
             <button class="mic-mini" id="mic-receipt" onclick="voiceFor('receipt')">🎤</button>
           </div>
         </div>
@@ -1724,6 +1724,13 @@ function voiceFor(field){
   rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
   rec.start();
 }
+function koreanNumToDigit(text){
+  // ➕ 추가: 물량 마이크용 — "한개/두개" 같은 한글 숫자를 아라비아 숫자로 강제 변환
+  const map=[['열',10],['아홉',9],['여덜',8],['여덟',8],['일곱',7],['여섯',6],['다섯',5],['네',4],['세',3],['두',2],['한',1]];
+  let result=text;
+  map.forEach(([word,num])=>{ result=result.replace(new RegExp(word,'g'), num); });
+  return result;
+}
 function applyVoiceField(field, text){
   if(field==='receipt'){
     // ✏️ 변경: 한글이 섞인 예외 텍스트("선조치" 등)는 그대로 넣고, 숫자만 말했을 때만 6-2-5 자동 포맷 적용
@@ -1739,8 +1746,11 @@ function applyVoiceField(field, text){
     else if(words.length>=2){ document.getElementById('f-dong').value=words[0]; document.getElementById('f-ho').value=words.slice(1).join(' '); }
     else { showToast('"303 704"또는 "관리동 기타"처럼 두 단어를 말씀해주세요','warn'); return; }
     updateFname();
-  } else if(field==='defect' || field==='quantity'){
+  } else if(field==='defect'){
     document.getElementById('f-'+field).value=text;
+    updateFname();
+  } else if(field==='quantity'){
+    document.getElementById('f-quantity').value=koreanNumToDigit(text); // ✏️ 변경: "한개/두개" 등 한글 숫자를 아라비아 숫자로 강제 변환
     updateFname();
   }
   showToast('✅ "'+text+'" 입력됨');
