@@ -1598,7 +1598,7 @@ function applyVoiceField(field, text){
   if(field==='receipt'){
     // ✏️ 변경: 한글이 섞인 예외 텍스트("선조치" 등)는 그대로 넣고, 숫자만 말했을 때만 6-2-5 자동 포맷 적용
     const el=document.getElementById('f-receipt');
-    if(/[^0-9]/.test(text)){ el.value=text; updateFname(); }
+    if(/[^0-9]/.test(text)){ el.value=text.replace(/\s+/g,''); updateFname(); } // ✏️ 변경: 띄어쓰기 제거하고 붙여쓰기로 저장
     else { el.value=text.replace(/\D/g,'').slice(0,13); formatReceipt(el); }
   } else if(field==='dongho'){
     const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
