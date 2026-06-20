@@ -1221,6 +1221,17 @@ async function uploadDrive() {
   }
 }
 
+async function uploadCertToDrive(dataUrl, fileName){
+  const url=document.getElementById('s-url').value.trim();
+  const folder=document.getElementById('s-folder').value.trim();
+  if(!url||!folder) return; // 드라이브 미연결이면 조용히 스킵(확인서는 이미 갤러리/IndexedDB에 저장됐으므로)
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder})});
+    const json=await res.json();
+    if(json.status==='ok') showToast('☁️ 확인서 드라이브 저장 완료');
+    else showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn');
+  }catch(e){ showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn'); }
+}
 function updateJobAfterSave(meta, stage, fileName, shotId) {
   const job = getOrCreateJob(meta);
   const now  = new Date();
@@ -1468,6 +1479,8 @@ function confirmCertSave(){
   job.lastAt=now.toISOString();
   saveAll();
   renderJobs();
+
+  if(document.getElementById('t-auto').classList.contains('on')) uploadCertToDrive(dataUrl, fname); // ➕ 추가: 사진처럼 자동업로드 토글이 켜져있으면 확인서도 드라이브로 전송
 
   _pendingCert=null;
   document.getElementById('cert-modal').classList.remove('show');
