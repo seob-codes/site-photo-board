@@ -1577,7 +1577,7 @@ function calcFormula(el){
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
   // ✏️ 변경: 한글 등 숫자가 아닌 글자가 섞여있으면(예외 — "선조치"/"관리소요청" 등) 자동 대시 포맷을 건너뛰고 그대로 둠
-  if(/[^0-9]/.test(el.value)){ updateFname(); return; }
+  if(/[^0-9-]/.test(el.value)){ updateFname(); return; } // ✏️ 변경: 자동 삽입된 대시(-)는 예외 판단에서 빼야 함(안 그러면 포맷 적용 후 다음 입력부터 예외모드로 오작동)
   const digits=el.value.replace(/\D/g,'').slice(0,13);
   const part1=digits.slice(0,6), part2=digits.slice(6,8), part3=digits.slice(8,13);
   let out=part1;
