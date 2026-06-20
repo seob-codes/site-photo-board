@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>써비의 현장보드판</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -646,6 +650,7 @@ const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#
 //  초기화
 // ════════════════════════
 loadAll(); startCam(); updateFname(); updateDriveBadge(); renderJobs();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); } // ➕ 추가: PWA 설치 가능하게 + 네트워크 우선 캐싱
 
 // ════════════════════════
 //  탭
