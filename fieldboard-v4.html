@@ -399,6 +399,12 @@ select option{background:var(--surface2);}
           <div class="dd-panel" id="dd-defect"></div>
         </div>
         <div class="ig">
+          <div class="il">산출식</div>
+          <div class="ir">
+            <input type="text" id="f-formula" placeholder="예) (2*2)*2.3-(1*1)" oninput="calcFormula(this)">
+          </div>
+        </div>
+        <div class="ig">
           <div class="il">물량</div>
           <div class="ir">
             <input type="text" id="f-quantity" oninput="updateFname()">
@@ -1531,6 +1537,18 @@ async function applySignature(role, name, sigDataUrl){
   _pendingCert.dataUrl=canvas.toDataURL('image/jpeg',0.92);
   document.getElementById('cert-preview-img').src=_pendingCert.dataUrl;
 }
+function calcFormula(el){
+  // ➕ 추가: 산출식("(2*2)*2.3-(1*1)" 등)을 계산해서 물량 칸에 결과를 자동으로 채움
+  const expr=el.value.trim();
+  if(!expr || !/^[0-9+\-*/(). ]+$/.test(expr)) return; // 숫자/사칙연산/괄호 외 글자가 있으면 계산 안 함(안전장치)
+  try{
+    const result=Function('"use strict";return ('+expr+')')();
+    if(typeof result==='number' && isFinite(result)){
+      document.getElementById('f-quantity').value=String(Math.round(result*100)/100);
+      updateFname();
+    }
+  }catch(e){}
+}
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
   // ✏️ 변경: 한글 등 숫자가 아닌 글자가 섞여있으면(예외 — "선조치"/"관리소요청" 등) 자동 대시 포맷을 건너뛰고 그대로 둠
@@ -1616,7 +1634,7 @@ function applyVoiceField(field, text){
   showToast('✅ "'+text+'" 입력됨');
 }
 function clearFields(){
-  ['receipt','complex','dong','ho','worktype','location','defect','quantity'].forEach(f=>{
+  ['receipt','complex','dong','ho','worktype','location','defect','quantity','formula'].forEach(f=>{
     const i=document.getElementById('f-'+f);
     if(i) i.value='';
   });
