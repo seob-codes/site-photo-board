@@ -1533,6 +1533,8 @@ async function applySignature(role, name, sigDataUrl){
 }
 function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
 function formatReceipt(el){
+  // ✏️ 변경: 한글 등 숫자가 아닌 글자가 섞여있으면(예외 — "선조치"/"관리소요청" 등) 자동 대시 포맷을 건너뛰고 그대로 둠
+  if(/[^0-9]/.test(el.value)){ updateFname(); return; }
   const digits=el.value.replace(/\D/g,'').slice(0,13);
   const part1=digits.slice(0,6), part2=digits.slice(6,8), part3=digits.slice(8,13);
   let out=part1;
@@ -1594,15 +1596,18 @@ function voiceFor(field){
 }
 function applyVoiceField(field, text){
   if(field==='receipt'){
+    // ✏️ 변경: 한글이 섞인 예외 텍스트("선조치" 등)는 그대로 넣고, 숫자만 말했을 때만 6-2-5 자동 포맷 적용
     const el=document.getElementById('f-receipt');
-    el.value=text.replace(/\D/g,'').slice(0,13);
-    formatReceipt(el);
+    if(/[^0-9]/.test(text)){ el.value=text; updateFname(); }
+    else { el.value=text.replace(/\D/g,'').slice(0,13); formatReceipt(el); }
   } else if(field==='dongho'){
     const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
     const nums=text.match(/\d+/g);
+    const words=text.trim().split(/\s+/); // ➕ 추가: 숫자 패턴이 없으면 한글 등 단어 단위로 앞=동, 뒤=호 로 나눔(예: "관리동 기타")
     if(m){ document.getElementById('f-dong').value=m[1]; document.getElementById('f-ho').value=m[2]; }
     else if(nums&&nums.length>=2){ document.getElementById('f-dong').value=nums[0]; document.getElementById('f-ho').value=nums[1]; }
-    else { showToast('"303 704"처럼 숫자 두 개를 말씀해주세요','warn'); return; }
+    else if(words.length>=2){ document.getElementById('f-dong').value=words[0]; document.getElementById('f-ho').value=words.slice(1).join(' '); }
+    else { showToast('"303 704"또는 "관리동 기타"처럼 두 단어를 말씀해주세요','warn'); return; }
     updateFname();
   } else if(field==='defect' || field==='quantity'){
     document.getElementById('f-'+field).value=text;
