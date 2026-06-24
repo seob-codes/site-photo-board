@@ -67,7 +67,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .last-shot{position:absolute;bottom:10px;left:10px;width:46px;height:46px;border-radius:10px;border:2px solid rgba(255,255,255,0.7);background:#000 center/cover no-repeat;box-shadow:0 4px 10px rgba(0,0,0,0.5);cursor:pointer;display:none;z-index:2;}
 .last-shot.show{display:block;}
 /* ➕ 추가: 화면 탭하면 찍히는 "공사 위치" 마커(연습용, 디자인 확정 전) */
-.tap-marker{position:absolute;width:28px;height:28px;border:3px solid #ff3b30;border-radius:50%;background:rgba(255,59,48,0.18);transform:translate(-50%,-50%);display:none;pointer-events:none;z-index:6;box-shadow:0 0 0 2px rgba(255,255,255,0.6);align-items:center;justify-content:center;font-weight:700;color:#ff3b30;}
+.tap-marker{position:absolute;width:28px;height:28px;border:2px solid #ff3b30;border-radius:50%;background:none;transform:translate(-50%,-50%);display:none;pointer-events:auto;cursor:move;z-index:6;box-shadow:0 0 0 2px #fff;align-items:center;justify-content:center;font-weight:700;color:#ff3b30;}
 .tap-marker.show{display:flex;}
 .side-btn.mode-on{border-color:var(--accent);background:linear-gradient(160deg,var(--accent),#2f5fc4);}
 .marker-panel{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;margin-bottom:10px;}
@@ -79,7 +79,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .marker-color-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;}
 .marker-color-btn.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent);}
 .marker-size-btn{width:26px;height:26px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:14px;cursor:pointer;}
-.marker-resize-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid #fff;pointer-events:auto;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
 .tap-marker .marker-content{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
 
 /* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
@@ -325,9 +324,7 @@ select option{background:var(--surface2);}
       <div class="cam-wrap" id="cam-wrap" onclick="placeTapMarker(event)">
         <video id="live-video" autoplay playsinline muted></video>
         <canvas id="snap-canvas" style="display:none"></canvas>
-        <div class="tap-marker" id="tap-marker">
-          <div class="marker-resize-handle" id="marker-resize-handle"></div>
-        </div>
+        <div class="tap-marker" id="tap-marker"></div>
         <div class="corners">
           <div class="c c-tl"></div><div class="c c-tr"></div>
           <div class="c c-bl"></div><div class="c c-br"></div>
@@ -363,8 +360,7 @@ select option{background:var(--surface2);}
       <div class="marker-panel" id="marker-panel">
         <div class="marker-panel-row">
           <div class="marker-shape-btn active" data-shape="circle" onclick="setMarkerShape('circle',this)">⭕</div>
-          <div class="marker-shape-btn" data-shape="arrow" onclick="setMarkerShape('arrow',this)">➡️</div>
-          <div class="marker-shape-btn" data-shape="square" onclick="setMarkerShape('square',this)">⬜</div>
+          <div class="marker-shape-btn" data-shape="arrow" onclick="setMarkerShape('arrow',this)">➜</div>
           <div class="marker-shape-btn" data-shape="text" onclick="setMarkerShape('text',this)">Ｔ</div>
           <input type="text" id="marker-text-input" placeholder="예: 균열" maxlength="6" style="display:none;width:80px;">
         </div>
@@ -939,7 +935,7 @@ function setMarkerColor(color, el){
   renderTapMarkerLive();
 }
 function renderTapMarkerLive(){
-  // ✏️ 변경: size(숫자1개) → width/height(가로/세로 따로)로 변경, 타원/늘어난 화살표 등 비대칭 모양 지원
+  // ✏️ 변경: 네모 모양 삭제, 원=채우기 없는 얇은 빨간선+흰테두리, 화살표=고정 화살촉+늘어나는 선(이모지 대신 직접 그림)
   if(!A.tapMarker) return;
   const {shape,color,width,height}=A.tapMarker;
   const marker=document.getElementById('tap-marker');
@@ -947,20 +943,30 @@ function renderTapMarkerLive(){
   marker.style.top=(A.tapMarker.y*100)+'%';
   marker.style.width=width+'px'; marker.style.height=height+'px';
   marker.style.color=color;
-  const base=28, sx=width/base, sy=height/base;
   let content='';
-  if(shape==='circle'){ marker.style.borderRadius='50%'; marker.style.border='3px solid '+color; marker.style.background=color+'30'; }
-  else if(shape==='square'){ marker.style.borderRadius='4px'; marker.style.border='3px solid '+color; marker.style.background=color+'30'; }
-  else if(shape==='arrow'){ marker.style.border='none'; marker.style.background='none'; content=`<span class="marker-content" style="font-size:${base}px;transform:scale(${sx},${sy});">➡️</span>`; }
-  else if(shape==='text'){ marker.style.border='none'; marker.style.background='none'; const t=A.tapMarker.text||document.getElementById('marker-text-input').value||''; content=`<span class="marker-content" style="font-size:${base*0.6}px;font-weight:700;transform:scale(${sx},${sy});white-space:nowrap;">${t}</span>`; }
-  marker.innerHTML=content+'<div class="marker-resize-handle" id="marker-resize-handle"></div>';
-  setupMarkerResizeHandle();
+  if(shape==='circle'){
+    marker.style.borderRadius='50%'; marker.style.border='2px solid '+color; marker.style.background='none'; marker.style.boxShadow='0 0 0 2px #fff';
+  } else if(shape==='arrow'){
+    marker.style.border='none'; marker.style.background='none'; marker.style.boxShadow='none';
+    const headLen=Math.min(18, width*0.5), headW=Math.max(8, height*0.7), lineW=Math.max(2, height*0.16); // ➕ 추가: 화살촉은 거의 고정 크기, 선(길이)만 width를 따라 늘어남
+    content=`<div style="position:relative;width:100%;height:100%;">
+      <div style="position:absolute;left:0;top:50%;width:calc(100% - ${headLen}px);height:${lineW}px;background:${color};transform:translateY(-50%);"></div>
+      <div style="position:absolute;right:0;top:50%;width:0;height:0;border-top:${headW/2}px solid transparent;border-bottom:${headW/2}px solid transparent;border-left:${headLen}px solid ${color};transform:translateY(-50%);"></div>
+    </div>`;
+  } else if(shape==='text'){
+    marker.style.border='none'; marker.style.background='none'; marker.style.boxShadow='none';
+    const base=28, sx=width/base, sy=height/base;
+    const t=A.tapMarker.text||document.getElementById('marker-text-input').value||'';
+    content=`<span class="marker-content" style="font-size:${base*0.6}px;font-weight:700;transform:scale(${sx},${sy});white-space:nowrap;">${t}</span>`;
+  }
+  marker.innerHTML=content;
+  setupMarkerDrag();
   marker.classList.add('show');
 }
 function placeTapMarker(e){
   // ✏️ 변경: "마커" 모드가 켜져있을 때만 탭이 마커로 인식됨(평소엔 화면을 자유롭게 탭해도 안전)
   if(!A.markerMode) return;
-  if(e.target.closest && (e.target.closest('.last-shot')||e.target.closest('.marker-resize-handle'))) return;
+  if(e.target.closest && (e.target.closest('.last-shot')||e.target.closest('#tap-marker'))) return; // ✏️ 변경: 마커 몸통 자체를 누른 건 여기서 처리하지 않음(크기조절용, 아래 드래그 로직이 따로 담당)
   const wrap=document.getElementById('cam-wrap');
   const rect=wrap.getBoundingClientRect();
   const x=(e.clientX-rect.left)/rect.width;
@@ -970,57 +976,70 @@ function placeTapMarker(e){
   A.tapMarker={x,y,shape,color,width,height,text};
   renderTapMarkerLive();
 }
-const _markerDrag={active:false,startX:0,startY:0,startW:0,startH:0};
+// ✏️ 변경: 손잡이를 없애고, 마커 몸통 어디를 누르든 끄는 방향에 따라 크기조절(짧게 탭하면 그냥 같은 자리라 사실상 무동작, 화면의 다른 곳을 탭해야 진짜 이동)
+const _markerDrag={pending:false,active:false,startX:0,startY:0,startW:0,startH:0,signX:1,signY:1};
 function _markerDragPos(e){ const p=e.touches?e.touches[0]:e; return [p.clientX,p.clientY]; }
-function _markerDragMove(e){
-  if(!_markerDrag.active) return;
+function _markerDragStart(e){
+  if(!A.tapMarker) return;
+  const marker=document.getElementById('tap-marker');
+  const rect=marker.getBoundingClientRect();
   const [x,y]=_markerDragPos(e);
-  A.tapMarker.width=Math.max(14, _markerDrag.startW+(x-_markerDrag.startX)*2);
-  A.tapMarker.height=Math.max(14, _markerDrag.startH+(y-_markerDrag.startY)*2);
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  _markerDrag.pending=true; _markerDrag.active=false;
+  _markerDrag.signX = x>=cx?1:-1; _markerDrag.signY = y>=cy?1:-1; // ➕ 추가: 중심 기준 어느 쪽을 눌렀는지 기억해서, 바깥쪽으로 끌면 항상 커지도록
+  _markerDrag.startX=x; _markerDrag.startY=y;
+  _markerDrag.startW=A.tapMarker.width; _markerDrag.startH=A.tapMarker.height;
+}
+function _markerDragMove(e){
+  if(!_markerDrag.pending) return; // 드래그 시작점이 없으면(마커를 누른 적 없으면) 아무것도 하지 않음
+  const [x,y]=_markerDragPos(e);
+  const dx=x-_markerDrag.startX, dy=y-_markerDrag.startY;
+  if(!_markerDrag.active){
+    if(Math.abs(dx)<6 && Math.abs(dy)<6) return; // ➕ 추가: 살짝 떨리는 정도는 무시, 일정 거리 넘어야 크기조절 시작
+    _markerDrag.active=true;
+  }
+  A.tapMarker.width=Math.max(14, _markerDrag.startW + dx*_markerDrag.signX*2);
+  A.tapMarker.height=Math.max(14, _markerDrag.startH + dy*_markerDrag.signY*2);
   A.markerStyle.width=A.tapMarker.width; A.markerStyle.height=A.tapMarker.height;
   renderTapMarkerLive();
   e.preventDefault(); e.stopPropagation();
 }
 function _markerDragEnd(e){
-  if(!_markerDrag.active) return; // ✏️ 변경: 드래그 중이 아니면 아무것도 막지 않음(이게 없어서 모든 클릭/터치가 막혔던 버그)
-  _markerDrag.active=false;
-  e.preventDefault(); e.stopPropagation();
+  if(_markerDrag.active){ e.preventDefault(); e.stopPropagation(); } // ✏️ 변경: 실제로 크기조절이 있었을 때만 막음(조건 없이 막으면 전역 클릭 차단 버그 재발)
+  _markerDrag.pending=false; _markerDrag.active=false;
 }
 document.addEventListener('mousemove',_markerDragMove);
 document.addEventListener('touchmove',_markerDragMove,{passive:false});
 document.addEventListener('mouseup',_markerDragEnd);
 document.addEventListener('touchend',_markerDragEnd);
-function setupMarkerResizeHandle(){
-  // ✏️ 변경: 핸들 누르기 이벤트만 매번 다시 연결(문서 전체 리스너는 위에서 한 번만 등록해 중복 방지)
-  const handle=document.getElementById('marker-resize-handle');
-  if(!handle) return;
-  const start=e=>{
-    _markerDrag.active=true;
-    [_markerDrag.startX,_markerDrag.startY]=_markerDragPos(e);
-    _markerDrag.startW=A.tapMarker.width; _markerDrag.startH=A.tapMarker.height;
-    e.preventDefault(); e.stopPropagation();
-  };
-  handle.onmousedown=start; handle.ontouchstart=start;
+function setupMarkerDrag(){
+  // ✏️ 변경: 손잡이가 아니라 마커 몸통(#tap-marker) 자체에 누르기 이벤트 연결
+  const marker=document.getElementById('tap-marker');
+  if(!marker) return;
+  marker.onmousedown=_markerDragStart; marker.ontouchstart=_markerDragStart;
 }
 function clearTapMarker(){
   A.tapMarker=null;
   document.getElementById('tap-marker').classList.remove('show');
 }
 function drawTapMarkerOnCanvas(ctx, W, H){
-  // ✏️ 변경: width/height(가로세로 따로)를 반영해서 타원/늘어난 모양으로 사진에도 합성
+  // ✏️ 변경: 네모 삭제, 원=채우기 없는 얇은선+흰테두리, 화살표=화살촉 고정 크기로 직접 그림(이모지 대신)
   if(!A.tapMarker) return;
   const {x,y,shape,color,width,height,text}=A.tapMarker;
   const cx=x*W, cy=y*H;
   const scale=W/document.getElementById('cam-wrap').clientWidth; // 화면 px 크기를 사진 해상도 비율로 변환
   const rx=(width/2)*scale, ry=(height/2)*scale;
   ctx.save();
-  ctx.strokeStyle=color; ctx.fillStyle=color+'30'; ctx.lineWidth=Math.max(3,Math.min(rx,ry)*0.18);
-  if(shape==='circle'){ ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
-  else if(shape==='square'){ ctx.fillRect(cx-rx,cy-ry,rx*2,ry*2); ctx.strokeRect(cx-rx,cy-ry,rx*2,ry*2); }
+  if(shape==='circle'){
+    ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(4,Math.min(rx,ry)*0.22); ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); // 흰 테두리(바깥쪽 느낌)
+    ctx.strokeStyle=color; ctx.lineWidth=Math.max(2,Math.min(rx,ry)*0.1); ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); // 얇은 빨간선(채우기 없음)
+  }
   else if(shape==='arrow'){
-    ctx.translate(cx,cy); ctx.scale((width/28), (height/28));
-    ctx.font=`${28*scale}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color;
-    ctx.fillText('➡️',0,0);
+    const headLen=Math.min(18*scale, rx*2*0.5), headW=Math.max(8*scale, ry*0.9), lineW=Math.max(2*scale, ry*0.32);
+    const left=cx-rx, right=cx+rx;
+    ctx.fillStyle=color; ctx.strokeStyle=color;
+    ctx.fillRect(left, cy-lineW/2, (right-left-headLen), lineW); // 선(길이만 width를 따라 늘어남)
+    ctx.beginPath(); ctx.moveTo(right-headLen, cy-headW/2); ctx.lineTo(right, cy); ctx.lineTo(right-headLen, cy+headW/2); ctx.closePath(); ctx.fill(); // 화살촉(거의 고정 크기)
   }
   else if(shape==='text'){
     ctx.translate(cx,cy); ctx.scale((width/28), (height/28));
