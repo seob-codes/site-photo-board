@@ -705,8 +705,11 @@ function doPost(e) {
   <div class="confirm-box" style="max-width:320px;text-align:center;">
     <div style="font-size:32px;margin-bottom:10px;">🔒</div>
     <div class="confirm-title">사용 승인이 필요합니다</div>
-    <div class="confirm-fname" id="lock-device-code">—</div>
-    <div class="confirm-warn" style="display:block;">이 기기 코드를 관리자에게 전달해<br>사용 승인을 요청하세요</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="confirm-fname" id="lock-device-code" style="flex:1;margin-bottom:0;">—</div>
+      <button class="dd-toggle" onclick="navigator.clipboard.writeText(document.getElementById('lock-device-code').textContent).then(()=>showToast('📋 기기 코드 복사됨'))">📋</button>
+    </div>
+    <div class="confirm-warn" style="display:block;margin-top:10px;">이 기기 코드를 관리자에게 전달해<br>사용 승인을 요청하세요</div>
     <div class="license-box">
       ⚠ 이 프로그램은 개인 라이선스 소프트웨어입니다.<br>
       무단 복제 · 배포 · 사용을 금지합니다.<br>
