@@ -1686,7 +1686,7 @@ async function drawCertificate(canvas, meta, sig){
   ctx.textBaseline='middle';
 
   const margin=60, labelW=160, tableW=W-margin*2, valueW=tableW-labelW, x0=margin;
-  let y=120; // ✏️ 변경: 제목이 상단에 너무 붙어있어 전체 줄을 +30 내림(이후 모든 줄이 이 값 기준 상대 계산이라 한 줄만 바꾸면 전체가 같이 내려감)
+  let y=150; // ✏️ 변경: 제목을 120→150으로 내려서 전체 줄을 다시 +30 내림(이후 모든 줄이 이 값 기준 상대 계산이라 한 줄만 바꾸면 전체가 같이 내려감)
 
   ctx.fillStyle='#000';
   ctx.font="bold 38px 'Noto Sans KR',sans-serif";
@@ -1720,37 +1720,45 @@ async function drawCertificate(canvas, meta, sig){
     y+=rowH;
   }
 
-  row('공 사 명', projectname, 50);
-  row('보수 업체', contractor, 50);
-  row('접 수 번 호', meta.receipt||'', 50);
-  row('단지명 (동,호)', (meta.complex||'')+' '+dongHo, 50);
-  row('접 수 내 용', meta.defect||'', 100); // ✏️ 변경: 가운데 정렬 취소, 기존(왼쪽 정렬)으로 복구
+  row('공 사 명', projectname, 60); // ✏️ 변경: 행 높이 70→60
+  row('보수 업체', contractor, 60); // ✏️ 변경: 행 높이 70→60
+  row('접 수 번 호', meta.receipt||'', 60); // ✏️ 변경: 행 높이 70→60
+  row('단지명 (동,호)', (meta.complex||'')+' '+dongHo, 60); // ✏️ 변경: 행 높이 70→60
+  row('접 수 내 용', meta.defect||'', 130); // ✏️ 변경: 행 높이 100→130
   row('보 수 내 용', repairContent, 130); // ✏️ 변경: 가운데 정렬 취소, 기존(왼쪽 정렬)으로 복구
-  row('보수완료일', dateStr, 50);
+  row('보수완료일', dateStr, 60); // ✏️ 변경: 행 높이 70→60
 
   // 작업자 / 현장대리인 (한 줄에 2칸씩)
-  const halfLabelW=labelW, halfW=tableW/2; // ✏️ 변경: 위 보수완료일 라벨과 너비를 맞춰 세로선이 일치하도록
+  const halfLabelW=labelW, halfW=tableW/2, halfRowH=60; // ✏️ 변경: 위 보수완료일 라벨과 너비를 맞춰 세로선이 일치하도록, 행 높이도 70→60로 통일
   ctx.fillStyle='#eee';
-  ctx.fillRect(x0,y,halfLabelW,50);
-  ctx.fillRect(x0+halfW,y,halfLabelW,50);
+  ctx.fillRect(x0,y,halfLabelW,halfRowH);
+  ctx.fillRect(x0+halfW,y,halfLabelW,halfRowH);
   ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
-  ctx.strokeRect(x0,y,halfLabelW,50);
-  ctx.strokeRect(x0+halfLabelW,y,halfW-halfLabelW,50);
-  ctx.strokeRect(x0+halfW,y,halfLabelW,50);
-  ctx.strokeRect(x0+halfW+halfLabelW,y,tableW-halfW-halfLabelW,50);
+  ctx.strokeRect(x0,y,halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfLabelW,y,halfW-halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfW,y,halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfW+halfLabelW,y,tableW-halfW-halfLabelW,halfRowH);
   ctx.fillStyle='#000'; ctx.font="bold 18px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
-  ctx.fillText('작 업 자', x0+halfLabelW/2, y+25);
-  ctx.fillText('현장대리인', x0+halfW+halfLabelW/2, y+25);
-  ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
-  ctx.fillText(worker, x0+halfLabelW+14, y+25);
-  const managerNameX=x0+halfW+halfLabelW+14;
-  ctx.fillText(manager+(manager?' (인)':''), managerNameX, y+25); // ✏️ 변경: "(인)" 글자 다시 표시
+  ctx.fillText('작 업 자', x0+halfLabelW/2, y+halfRowH/2);
+  ctx.fillText('현장대리인', x0+halfW+halfLabelW/2, y+halfRowH/2);
+  ctx.font="18px 'Noto Sans KR',sans-serif";
+  const workerCenterX=x0+halfLabelW+(halfW-halfLabelW)/2; // ✏️ 변경: 값칸 정가운데 x좌표 계산
+  const managerCenterX=x0+halfW+halfLabelW+(tableW-halfW-halfLabelW)/2; // ✏️ 변경: 값칸 정가운데 x좌표 계산
+  ctx.textAlign='center';
+  ctx.fillText(worker, workerCenterX, y+halfRowH/2); // ✏️ 변경: 왼쪽정렬→가운데정렬
+  const managerText=manager+(manager?' (인)':''); // ✏️ 변경: "(인)" 글자 다시 표시
+  ctx.fillText(managerText, managerCenterX, y+halfRowH/2); // ✏️ 변경: 왼쪽정렬→가운데정렬
+  ctx.textAlign='left';
   if(manager){
+    const totalW=ctx.measureText(managerText).width; // ➕ 추가: 가운데정렬된 글자의 왼쪽 끝 x좌표를 구하기 위해 전체 폭 측정
+    const leftEdge=managerCenterX-totalW/2;
     const prefixW=ctx.measureText(manager+' ').width; // ➕ 추가: 이름 길이만큼의 실제 폭을 측정해 "(인)" 시작 x좌표 계산
     const sealW=ctx.measureText('(인)').width;
-    drawVerticalStamp(ctx, manager, managerNameX+prefixW+sealW/2, y+25, 28, 44); // ✏️ 변경: 이름 길이와 무관하게 "(인)" 글자 중앙에 정확히 겹치도록 고정값→동적 계산으로 변경
+    drawVerticalStamp(ctx, manager, leftEdge+prefixW+sealW/2, y+halfRowH/2, 28, 44); // ✏️ 변경: 가운데정렬된 위치 기준으로 "(인)" 글자 중앙 계산
   }
-  y+=80;
+  y+=halfRowH+30; // ✏️ 변경: 행 높이가 70으로 늘어난 만큼 다음 줄까지의 간격도 유지(기존 50행+30여백=80과 동일한 비율)
+  y+=30; // ➕ 추가: 확인문구를 830→860으로 내림(이후 날짜/확인자 줄도 같이 +30 이동)
+  y+=20; // ➕ 추가: 확인문구를 890→910으로 추가로 내림(이후 날짜/확인자 줄도 같이 +20 이동)
 
   ctx.font="17px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
   ctx.fillText('상기 접수내용 및 보수내용대로 보수공사를 완료하였음을 확인합니다.', W/2, y);
@@ -1760,17 +1768,18 @@ async function drawCertificate(canvas, meta, sig){
   y+=70;
 
   ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
-  const confirmLabelX=x0+280, confirmNameX=x0+490, confirmSealX=x0+580; // ✏️ 변경: 전체 줄을 오른쪽으로 이동
-  const tenantY=y, officeY=y+110; // ✏️ 변경: 확인자(관리소) 줄만 더 아래로(간격 58→110, y=978→1030)
+  const confirmLabelX=x0+590, confirmNameX=x0+760; // ✏️ 변경: 간격을 절반 정도로 더 줄임(라벨↔이름, 이름↔(인) 둘 다 좁힘)
+  const confirmSealRightX=x0+tableW; // ✏️ 변경: "(인)" 글자를 고정 x좌표가 아니라 표 우측 끝선(x0+tableW)에 오른쪽 정렬로 맞춤
+  const tenantY=y, officeY=y+80; // ✏️ 변경: 확인자(관리소) 줄을 y=1070으로 올림(tenantY=990 기준 간격 80)
   ctx.fillText('확인자(입주자)  :', confirmLabelX, tenantY);
   if(sig&&sig.tenantName) ctx.fillText(sig.tenantName, confirmNameX, tenantY);
-  ctx.fillText('(인)', confirmSealX, tenantY);
-  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, confirmSealX-25, tenantY-25, 80,50); }
+  ctx.textAlign='right'; ctx.fillText('(인)', confirmSealRightX, tenantY); ctx.textAlign='left'; // ✏️ 변경: "(인)" 우측 끝이 표 끝선과 정확히 맞도록 right 정렬
+  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, confirmSealRightX-65, tenantY-25, 80,50); } // ✏️ 변경: 서명 이미지도 같은 끝선 기준으로 위치 조정
 
   ctx.fillText('확인자(관리소)  :', confirmLabelX, officeY);
   if(sig&&sig.officeName) ctx.fillText(sig.officeName, confirmNameX, officeY);
-  ctx.fillText('(인)', confirmSealX, officeY);
-  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, confirmSealX-25, officeY-25, 80,50); }
+  ctx.textAlign='right'; ctx.fillText('(인)', confirmSealRightX, officeY); ctx.textAlign='left'; // ✏️ 변경: "(인)" 우측 끝이 표 끝선과 정확히 맞도록 right 정렬
+  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, confirmSealRightX-65, officeY-25, 80,50); } // ✏️ 변경: 서명 이미지도 같은 끝선 기준으로 위치 조정
 }
 let _pendingCert=null;
 async function generateCertificate(){
