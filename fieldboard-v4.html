@@ -805,6 +805,12 @@ async function startCam() {
     show('cam-controls'); hide('after-shoot');
   } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
 }
+document.addEventListener('visibilitychange', ()=>{ // ➕ 추가: 다른 일 하다가 돌아왔을 때 멈춰있던 카메라를 자동으로 다시 켬
+  if(document.hidden) return;
+  if(!document.getElementById('tab-shoot').classList.contains('active')) return; // 촬영 탭이 아니면 건너뜀
+  if(document.getElementById('confirm-modal').classList.contains('show')) return; // 확인 팝업이 떠있으면 건너뜀
+  startCam();
+});
 
 const REQUIRED_FIELDS=[
   ['f-receipt','접수번호'],['f-complex','단지명'],['f-dong','동'],['f-ho','호'],
