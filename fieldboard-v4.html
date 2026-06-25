@@ -753,7 +753,7 @@ async function checkLicense(){
   const licenseCheckUrl=document.getElementById('s-url').value; // ✏️ 변경: 별도 상수 대신, 이미 설정 탭에 입력된 드라이브 연동 주소를 그대로 사용(같은 Apps Script가 둘 다 처리)
   if(!licenseCheckUrl) return; // 드라이브 주소가 아직 안 정해져 있으면 그냥 통과(아직 설정 전)
   try{
-    const res=await fetch(licenseCheckUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'checkAccess',deviceId:code})});
+    const res=await fetch(licenseCheckUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'checkAccess',deviceId:code})}); // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
     const json=await res.json();
     if(json.allowed===false){ document.getElementById('lock-overlay').classList.add('show'); }
   }catch(e){ /* 네트워크 오류 시엔 일단 통과시켜서 현장에서 앱이 먹통되지 않게 함 */ }
@@ -1510,7 +1510,7 @@ async function uploadDrive() {
 
   try {
     const res  = await fetch(url,{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'}, // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
       body:JSON.stringify({image:A.compositeDataUrl,fileName,folderId:folder})
     });
     const json = await res.json();
@@ -1540,7 +1540,7 @@ async function uploadCertToDrive(dataUrl, fileName){
   const folder=document.getElementById('s-folder').value.trim();
   if(!url||!folder) return; // 드라이브 미연결이면 조용히 스킵(확인서는 이미 갤러리/IndexedDB에 저장됐으므로)
   try{
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder})});
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder})}); // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
     const json=await res.json();
     if(json.status==='ok') showToast('☁️ 확인서 드라이브 저장 완료');
     else showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn');
