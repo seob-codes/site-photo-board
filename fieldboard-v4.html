@@ -624,10 +624,6 @@ function doPost(e) {
           <div class="toggle on" id="t-wm" onclick="this.classList.toggle('on');renderLiveBoard()"></div>
         </div>
         <div class="set-row">
-          <div><div class="set-name">촬영 즉시 자동 업로드</div><div class="set-desc">버튼 없이 바로 전송</div></div>
-          <div class="toggle" id="t-auto" onclick="this.classList.toggle('on')"></div>
-        </div>
-        <div class="set-row">
           <div><div class="set-name">저장 후 구분 자동 진행</div><div class="set-desc">전→중→후 자동 이동</div></div>
           <div class="toggle on" id="t-next" onclick="this.classList.toggle('on')"></div>
         </div>
@@ -880,7 +876,7 @@ function shoot() {
     hide('cam-wrap'); hide('cam-controls');
     show('preview-wrap'); show('after-shoot');
     updateFname();
-    if(document.getElementById('t-auto').classList.contains('on')) uploadDrive();
+    uploadDrive(); // ✏️ 변경: 토글 검사 없이 항상 자동 업로드(실패하면 "☁️ 구글 드라이브에 저장" 버튼으로 재시도 가능)
   });
 }
 
@@ -1864,7 +1860,7 @@ function confirmCertSave(){
   saveAll();
   renderJobs();
 
-  if(document.getElementById('t-auto').classList.contains('on')) uploadCertToDrive(dataUrl, fname, meta); // ✏️ 변경: meta를 같이 넘겨서 폴더명 계산에 사용
+  uploadCertToDrive(dataUrl, fname, meta); // ✏️ 변경: 토글 검사 없이 항상 드라이브로도 업로드
 
   _pendingCert=null;
   document.getElementById('cert-modal').classList.remove('show');
