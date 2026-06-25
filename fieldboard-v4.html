@@ -694,6 +694,12 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- ➕ 추가: 기기 승인 검사가 끝날 때까지 화면을 가리는 로딩 가림막(검사 결과가 나오기 전엔 카메라/화면을 못 보게 함) -->
+<div id="license-gate" style="position:fixed;inset:0;background:#05060a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:2500;">
+  <div style="font-size:28px;">🔒</div>
+  <div style="color:var(--text2);font-size:13px;">사용 승인 확인 중...</div>
+</div>
+
 <!-- ➕ 추가: 승인 안 된 기기를 막는 잠금 화면 -->
 <div class="confirm-modal" id="lock-overlay" style="z-index:2000;">
   <div class="confirm-box" style="max-width:320px;text-align:center;">
@@ -750,13 +756,15 @@ async function checkLicense(){
   const code=getDeviceId();
   const el=document.getElementById('device-code-val'); if(el) el.value=code;
   const lockEl=document.getElementById('lock-device-code'); if(lockEl) lockEl.textContent=code;
+  const gate=document.getElementById('license-gate'); // ➕ 추가: 검사 끝날 때까지 화면을 가리는 가림막
   const licenseCheckUrl=document.getElementById('s-url').value; // ✏️ 변경: 별도 상수 대신, 이미 설정 탭에 입력된 드라이브 연동 주소를 그대로 사용(같은 Apps Script가 둘 다 처리)
-  if(!licenseCheckUrl) return; // 드라이브 주소가 아직 안 정해져 있으면 그냥 통과(아직 설정 전)
+  if(!licenseCheckUrl){ if(gate) gate.style.display='none'; return; } // ✏️ 변경: 검사 자체를 안 하면 가림막도 바로 치움
   try{
     const res=await fetch(licenseCheckUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'checkAccess',deviceId:code})}); // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
     const json=await res.json();
     if(json.allowed===false){ document.getElementById('lock-overlay').classList.add('show'); }
   }catch(e){ /* 네트워크 오류 시엔 일단 통과시켜서 현장에서 앱이 먹통되지 않게 함 */ }
+  finally{ if(gate) gate.style.display='none'; } // ➕ 추가: 검사가 끝나면(승인/거부/오류 모두) 가림막을 치움 — 거부된 경우엔 lock-overlay가 그 자리를 대신 덮음
 }
 const STAGES = ['전','중','후'];
 const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check'};
