@@ -519,14 +519,19 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  var imgData  = data.image;
-  var fileName = data.fileName;
-  var folderID = data.folderId;
+  var imgData    = data.image;
+  var fileName   = data.fileName;
+  var folderID   = data.folderId;
+  var jobFolder  = data.folderName; // ➕ 추가: 같은 작업끼리 모일 하위 폴더명(없으면 평평하게 저장)
   var bytes = Utilities.base64Decode(
     imgData.replace(/^data:image\/\w+;base64,/, '')
   );
   var blob   = Utilities.newBlob(bytes, 'image/jpeg', fileName);
   var folder = DriveApp.getFolderById(folderID);
+  if (jobFolder) { // ➕ 추가: 같은 이름의 하위 폴더가 있으면 그걸 쓰고, 없으면 새로 만듦
+    var existing = folder.getFoldersByName(jobFolder);
+    folder = existing.hasNext() ? existing.next() : folder.createFolder(jobFolder);
+  }
   var file   = folder.createFile(blob);
   return ContentService
     .createTextOutput(JSON.stringify({
@@ -1534,7 +1539,7 @@ async function uploadDrive() {
   try {
     const res  = await fetch(url,{
       method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'}, // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
-      body:JSON.stringify({image:A.compositeDataUrl,fileName,folderId:folder})
+      body:JSON.stringify({image:A.compositeDataUrl,fileName,folderId:folder,folderName:buildJobFolderName(meta)}) // ✏️ 변경: 같은 작업끼리 모일 하위 폴더명 같이 전송
     });
     const json = await res.json();
     if(json.status==='ok') {
@@ -1558,12 +1563,12 @@ async function uploadDrive() {
   }
 }
 
-async function uploadCertToDrive(dataUrl, fileName){
+async function uploadCertToDrive(dataUrl, fileName, meta){
   const url=document.getElementById('s-url').value.trim();
   const folder=document.getElementById('s-folder').value.trim();
   if(!url||!folder) return; // 드라이브 미연결이면 조용히 스킵(확인서는 이미 갤러리/IndexedDB에 저장됐으므로)
   try{
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder})}); // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder,folderName:buildJobFolderName(meta||{})})}); // ✏️ 변경: 같은 작업끼리 모일 하위 폴더명 같이 전송
     const json=await res.json();
     if(json.status==='ok') showToast('☁️ 확인서 드라이브 저장 완료');
     else showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn');
@@ -1603,6 +1608,14 @@ function getFieldMeta() {
     receipt:v('f-receipt'), complex:v('f-complex'), dong:v('f-dong'), ho:v('f-ho'),
     worktype:v('f-worktype'), location:v('f-location'), defect:v('f-defect'), quantity:v('f-quantity'),
   };
+}
+function buildJobFolderName(meta){ // ➕ 추가: 드라이브 안에서 같은 작업(접수번호)끼리 모일 하위 폴더명 생성
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const receipt=cl(meta.receipt);
+  return [complex,dong,ho,receipt].filter(Boolean).join('_')||'미분류';
 }
 function nextSeqFor(meta, stage) {
   if(!stage) return 1;
@@ -1851,7 +1864,7 @@ function confirmCertSave(){
   saveAll();
   renderJobs();
 
-  if(document.getElementById('t-auto').classList.contains('on')) uploadCertToDrive(dataUrl, fname); // ➕ 추가: 사진처럼 자동업로드 토글이 켜져있으면 확인서도 드라이브로 전송
+  if(document.getElementById('t-auto').classList.contains('on')) uploadCertToDrive(dataUrl, fname, meta); // ✏️ 변경: meta를 같이 넘겨서 폴더명 계산에 사용
 
   _pendingCert=null;
   document.getElementById('cert-modal').classList.remove('show');
