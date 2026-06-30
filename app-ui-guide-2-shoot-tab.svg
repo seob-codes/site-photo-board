@@ -1,0 +1,78 @@
+<svg viewBox="0 0 820 760" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>촬영 탭 안내도</title>
+<desc>현장보드판 앱 촬영 탭의 카메라 화면, 라이브 보드판, 버튼들, 사진 정보 입력칸 이름을 보여주는 안내 그림</desc>
+<rect width="820" height="760" fill="#0f1117"/>
+
+<!-- 카메라 영역 모형 -->
+<rect x="40" y="40" width="360" height="280" rx="16" fill="#15182a"/>
+<!-- 라이브 보드판(표) -->
+<rect x="50" y="220" width="150" height="90" fill="#fff"/>
+<g font-family="sans-serif" font-size="8" fill="#000">
+  <text x="56" y="232">단지명</text><text x="56" y="247">동-호</text><text x="56" y="262">위치</text>
+  <text x="56" y="277">하자내용</text><text x="56" y="292">작업사항</text><text x="56" y="305">산출식/물량</text>
+</g>
+<!-- 코너 가이드 -->
+<g stroke="#4f8ef7" stroke-width="2" fill="none">
+  <path d="M48,48 L48,64 M48,48 L64,48"/>
+  <path d="M372,48 L372,64 M372,48 L356,48"/>
+</g>
+<!-- 마지막 촬영 썸네일 -->
+<rect x="46" y="46" width="36" height="36" rx="8" fill="#333" stroke="#fff"/>
+<text x="64" y="68" font-size="9" fill="#9aa3c0" text-anchor="middle" font-family="sans-serif">썸네일</text>
+
+<!-- 촬영 컨트롤 -->
+<circle cx="170" cy="345" r="22" fill="#262b40" stroke="#4f8ef7" stroke-width="2"/>
+<text x="170" y="350" font-size="14" text-anchor="middle">📍</text>
+<circle cx="220" cy="345" r="30" fill="#fff" stroke="#4f8ef7" stroke-width="4"/>
+<text x="220" y="352" font-size="20" text-anchor="middle">📷</text>
+<circle cx="270" cy="345" r="22" fill="#262b40" stroke="#3a4060" stroke-width="2"/>
+<text x="270" y="350" font-size="14" text-anchor="middle">📄</text>
+
+<!-- 정보 입력칸 모형 -->
+<rect x="440" y="40" width="340" height="320" rx="12" fill="#181c2c" stroke="#2a2f45"/>
+<text x="456" y="64" font-family="sans-serif" font-size="11" font-weight="700" fill="#4f8ef7" letter-spacing="1">사진 정보</text>
+<g font-family="sans-serif" font-size="11" fill="#9aa3c0">
+  <text x="456" y="90">접수번호</text><text x="456" y="116">단지명 ▾</text><text x="456" y="142">동 / 호</text>
+  <text x="456" y="168">공종 ▾</text><text x="456" y="194">위치 ▾</text><text x="456" y="220">하자내용 ▾ 🎤</text>
+  <text x="456" y="246">산출식</text><text x="456" y="272">물량 🎤</text><text x="456" y="298">촬영구분(전/중/후/점검)</text>
+</g>
+<g fill="#262b40" stroke="#3a4060">
+  <rect x="560" y="80" width="200" height="20" rx="4"/><rect x="560" y="106" width="200" height="20" rx="4"/>
+  <rect x="560" y="132" width="200" height="20" rx="4"/><rect x="560" y="158" width="200" height="20" rx="4"/>
+  <rect x="560" y="184" width="200" height="20" rx="4"/><rect x="560" y="210" width="200" height="20" rx="4"/>
+  <rect x="560" y="236" width="200" height="20" rx="4"/><rect x="560" y="262" width="200" height="20" rx="4"/>
+  <rect x="560" y="288" width="200" height="20" rx="4"/>
+</g>
+
+<!-- 콜아웃 -->
+<line x1="220" y1="320" x2="220" y2="400" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="400" width="360" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="422" font-size="14" fill="#e8eaf2" font-family="sans-serif">셔터 버튼</text>
+<text x="54" y="442" font-size="12" fill="#9aa3c0" font-family="sans-serif">누르면 빈 칸 검사 후 "파일명 확인 팝업"이 뜸</text>
+
+<line x1="170" y1="367" x2="120" y2="470" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="470" width="300" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="492" font-size="14" fill="#e8eaf2" font-family="sans-serif">마커 모드 버튼 (📍)</text>
+<text x="54" y="512" font-size="12" fill="#9aa3c0" font-family="sans-serif">공사 위치 마커를 켜고 끄는 버튼</text>
+
+<line x1="270" y1="367" x2="320" y2="540" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="540" width="300" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="562" font-size="14" fill="#e8eaf2" font-family="sans-serif">완료확인서 버튼 (📄)</text>
+<text x="54" y="582" font-size="12" fill="#9aa3c0" font-family="sans-serif">완료확인서 미리보기 화면으로 이동</text>
+
+<line x1="125" y1="265" x2="80" y2="610" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="610" width="300" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="632" font-size="14" fill="#e8eaf2" font-family="sans-serif">라이브 보드판</text>
+<text x="54" y="652" font-size="12" fill="#9aa3c0" font-family="sans-serif">사진에 합성될 표가 촬영 전부터 미리 보임</text>
+
+<line x1="600" y1="360" x2="600" y2="400" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="440" y="400" width="340" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="454" y="422" font-size="14" fill="#e8eaf2" font-family="sans-serif">사진 정보 입력 카드</text>
+<text x="454" y="442" font-size="12" fill="#9aa3c0" font-family="sans-serif">접수번호~촬영구분까지, ▾=목록선택 🎤=마이크</text>
+
+<line x1="600" y1="456" x2="600" y2="500" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="440" y="500" width="340" height="76" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="454" y="522" font-size="14" fill="#e8eaf2" font-family="sans-serif">구글 드라이브에 저장 / 다시 촬영</text>
+<text x="454" y="542" font-size="12" fill="#9aa3c0" font-family="sans-serif">사진 찍은 뒤 나타나는 버튼 2개</text>
+<text x="454" y="560" font-size="12" fill="#9aa3c0" font-family="sans-serif">(다시 촬영하면 찍었던 마커도 전부 사라짐)</text>
+</svg>

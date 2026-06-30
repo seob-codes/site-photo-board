@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>써비의 현장보드판</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3348;
+  --accent:#4f8ef7;--accent2:#f7a84f;--danger:#f75f5f;--success:#4fca87;
+  --text:#e8ecf5;--text2:#8b94b2;--text3:#5a6480;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+.header{padding:10px 16px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.app-title{font-size:17px;font-weight:700;letter-spacing:-0.3px;}
+.app-title span{color:var(--accent);}
+.drive-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);cursor:pointer;}
+.drive-badge.ok{background:rgba(79,202,135,0.12);border-color:var(--success);color:var(--success);}
+.drive-badge.uploading{background:rgba(79,142,247,0.12);border-color:var(--accent);color:var(--accent);animation:blink 1s infinite;}
+.drive-badge.fail{background:rgba(247,95,95,0.12);border-color:var(--danger);color:var(--danger);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.tabs{display:flex;padding:0 14px;gap:5px;margin-bottom:8px;flex-shrink:0;}
+.tab{flex:1;padding:7px 2px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:var(--rs);font-size:11px;font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;transition:all 0.18s;}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;}
+
+.screens{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;overflow-y:auto;padding:0 14px 80px;display:none;}
+.screen.active{display:block;}
+
+/* ── 카드 ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;}
+.card-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:9px;}
+
+/* ── 카메라 ── */
+.cam-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;background:#000;margin-bottom:8px;}
+#live-video{width:100%;display:block;aspect-ratio:1.5;object-fit:cover;}
+#snap-canvas{display:none;}
+.corners{position:absolute;inset:0;pointer-events:none;}
+.c{position:absolute;width:16px;height:16px;}
+.c-tl{top:6px;left:6px;border-top:2px solid var(--accent);border-left:2px solid var(--accent);}
+.c-tr{top:6px;right:6px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);}
+.c-bl{bottom:6px;left:6px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent);}
+.c-br{bottom:6px;right:6px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent);}
+.preview-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;margin-bottom:8px;display:none;}
+
+.cam-controls{width:100%;margin-bottom:10px;text-align:center;font-size:0;}
+.cam-controls>*{display:inline-block;vertical-align:middle;margin:0 12px;}
+.shutter{width:72px;height:72px;border-radius:50%;background:linear-gradient(160deg,#ffffff,#dde2f0);border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 6px 18px rgba(79,142,247,0.4),0 2px 6px rgba(0,0,0,0.35),inset 0 1px 1px rgba(255,255,255,0.6);}
+.shutter:active{transform:scale(0.91);box-shadow:0 3px 10px rgba(79,142,247,0.35),inset 0 1px 1px rgba(255,255,255,0.6);}
+.side-btn{width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,#262b40,#1a1d2c);border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:20px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s;box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);}
+.side-btn:active{border-color:var(--accent);transform:scale(0.93);box-shadow:0 2px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);}
+
+/* ➕ 추가: 화면 탭하면 찍히는 "공사 위치" 마커(여러 개 동시에 찍을 수 있음, 연습용, 디자인 확정 전) */
+.tap-markers{position:absolute;inset:0;pointer-events:none;z-index:6;}
+.tap-marker{position:absolute;width:28px;height:28px;border:2px solid #ff3b30;border-radius:50%;background:none;transform:translate(-50%,-50%);pointer-events:auto;cursor:move;align-items:center;justify-content:center;font-weight:700;color:#ff3b30;}
+.tap-marker.selected{outline:2px dashed #fff;outline-offset:4px;} /* ➕ 추가: 선택된 마커만 점선 테두리로 표시(지우기는 선택된 것만 적용됨) */
+.side-btn.mode-on{border-color:var(--accent);background:linear-gradient(160deg,var(--accent),#2f5fc4);}
+.marker-panel{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;margin-bottom:10px;}
+.marker-panel.show{display:block;}
+.marker-panel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.marker-panel-row:last-child{margin-bottom:0;}
+.marker-shape-btn{width:34px;height:34px;border-radius:8px;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+.marker-shape-btn.active{border-color:var(--accent);background:rgba(79,142,247,0.15);}
+.marker-color-btn{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;}
+.marker-color-btn.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent);}
+.marker-size-btn{width:26px;height:26px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:14px;cursor:pointer;}
+.tap-marker .marker-content{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+
+/* ── 라이브 보드판 (촬영 전 미리보기 오버레이) ── */
+.live-board{position:absolute;left:0;bottom:0;width:36%;background:#fff;border:1px solid #000;font-family:'Noto Sans KR',sans-serif;display:none;z-index:1;}
+.live-board.show{display:block;}
+.lb-row{display:flex;border-bottom:1px solid #000;overflow:hidden;}
+.lb-row:last-child{border-bottom:none;}
+.lb-label{width:34%;background:#fff;color:#000;font-weight:700;padding:0 3px;border-right:1px solid #000;display:flex;align-items:center;flex-shrink:0;}
+.lb-val{flex:1;background:#fff;color:#000;font-weight:700;padding:0 3px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.lb-val.lb-stages{padding:0;}
+.lb-stages span{flex:1;text-align:center;}
+/* ── 촬영 확인 모달 ── */
+.confirm-modal{position:fixed;inset:0;background:rgba(5,6,10,0.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;}
+.confirm-modal.show{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;width:100%;max-width:320px;}
+.confirm-title{font-size:13px;color:var(--text2);font-weight:700;margin-bottom:8px;}
+.confirm-fname{font-size:13px;color:var(--accent2);font-family:'JetBrains Mono',monospace;word-break:break-all;background:var(--surface2);border-radius:var(--rs);padding:10px;margin-bottom:14px;}
+.confirm-btns{display:flex;gap:8px;}
+.confirm-btns button{flex:1;padding:11px;border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:1px solid var(--border);}
+.confirm-go{background:var(--accent);color:#fff;border-color:var(--accent);}
+.confirm-go:disabled{opacity:0.35;cursor:not-allowed;}
+.confirm-back{background:var(--surface2);color:var(--text2);}
+.confirm-exception{background:var(--surface2);color:var(--accent2);border-color:var(--accent2);}
+.confirm-warn{font-size:11px;color:var(--danger);margin:-6px 0 12px;}
+.cert-preview-wrap{width:100%;max-height:50vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rs);margin-bottom:10px;background:#fff;}
+.cert-preview-wrap img{width:100%;display:block;}
+.sig-pad-wrap{width:100%;height:160px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;margin-bottom:12px;touch-action:none;}
+#sig-canvas{width:100%;height:100%;display:block;}
+
+/* ── 단계별 촬영 사진 뷰어(스와이프) ── */
+.shot-viewer{position:fixed;inset:0;background:rgba(5,6,10,0.95);display:none;align-items:center;justify-content:center;z-index:1100;}
+.shot-viewer.show{display:flex;}
+.sv-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1;}
+.sv-counter{position:absolute;top:20px;left:18px;font-size:13px;font-weight:700;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;}
+.sv-stage{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+.sv-img-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px 16px;touch-action:pan-y;}
+.sv-img-wrap img{max-width:100%;max-height:100%;border-radius:var(--rs);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+.sv-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.sv-prev{left:8px;}
+.sv-next{right:8px;}
+
+/* ── 목록 드롭다운 (촬영 탭) ── */
+.dd-toggle{width:38px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
+.dd-panel{display:none;margin-top:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);max-height:180px;overflow-y:auto;}
+.dd-panel.show{display:block;}
+.dd-item{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:active{background:rgba(79,142,247,0.15);}
+.dd-empty{padding:10px 12px;font-size:11px;color:var(--text3);}
+
+/* ── 음성 (항목별 마이크) ── */
+.mic-mini{background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:15px;cursor:pointer;width:38px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mic-mini.listening{color:var(--danger);border-color:var(--danger);animation:ring 1.2s infinite;}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(247,95,95,0.35)}50%{box-shadow:0 0 0 8px rgba(247,95,95,0)}}
+
+/* ── 입력 ── */
+.ig{margin-bottom:8px;}
+.il{font-size:9px;font-weight:700;color:var(--text2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+.ir{display:flex;gap:6px;}
+input[type=text],input[type=date],select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:all 0.2s;-webkit-appearance:none;}
+input:focus,select:focus{border-color:var(--accent);}
+input::placeholder{color:var(--text3);}
+select option{background:var(--surface2);}
+
+/* ── 전중후 버튼 ── */
+.stage-btns{display:flex;gap:6px;}
+.sb{flex:1;padding:9px 4px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:var(--rs);font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;transition:all 0.18s;text-align:center;}
+.sb.s-before{border-color:#7ec8a0;background:rgba(126,200,160,0.12);color:#7ec8a0;}
+.sb.s-during{border-color:var(--accent2);background:rgba(247,168,79,0.12);color:var(--accent2);}
+.sb.s-after{border-color:var(--success);background:rgba(79,202,135,0.12);color:var(--success);}
+.sb.s-check{border-color:var(--accent);background:rgba(79,142,247,0.12);color:var(--accent);}
+.sb.s-done{border-color:#b088f7;background:rgba(176,136,247,0.12);color:#b088f7;}
+
+/* ── 파일명 미리보기 ── */
+.fname-preview{background:var(--surface2);border-radius:var(--rs);padding:8px 10px;margin-top:4px;}
+.fname-label{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:0.8px;margin-bottom:2px;}
+.fname-val{font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;word-break:break-all;}
+
+/* ── 업로드 버튼 ── */
+.upload-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:7px;}
+.upload-btn:active{background:#3a7ae8;}
+.upload-btn:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed;}
+.retake-btn{width:100%;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--rs);padding:11px;font-size:13px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
+
+/* ════════════════════════════
+   ★★★ 작업 목록 (자동 생성) ★★★
+════════════════════════════ */
+.job-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.job-list-title{font-size:14px;font-weight:700;}
+.job-count-badge{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.job-filter-tabs{display:flex;gap:6px;}
+.job-filter-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;}
+.job-filter-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* 작업 카드 */
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:border-color 0.2s;}
+.job-card:active{border-color:var(--accent);}
+.job-card.is-active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(79,142,247,0.3);}
+.job-card.is-done{border-color:rgba(79,202,135,0.3);}
+
+.job-top{display:flex;align-items:center;padding:12px 13px 8px;gap:10px;}
+.job-del-btn{width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.job-del-btn:active{border-color:var(--danger);color:var(--danger);}
+.job-export-btn{width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.job-export-btn:active{border-color:var(--accent);}
+.job-meta{flex:1;min-width:0;}
+.job-title{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-loc{font-size:11px;color:var(--text3);margin-top:2px;}
+.job-time{font-size:9px;color:var(--text3);margin-top:1px;font-family:'JetBrains Mono',monospace;}
+
+/* ★ 진행 상태 바 ★ */
+.job-progress{padding:0 13px 12px;}
+.progress-track{display:flex;gap:5px;margin-bottom:6px;}
+.pt-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.pt-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);transition:all 0.2s;position:relative;}
+.pt-dot.done-before{border-color:#7ec8a0;background:rgba(126,200,160,0.15);color:#7ec8a0;}
+.pt-dot.done-during{border-color:var(--accent2);background:rgba(247,168,79,0.15);color:var(--accent2);}
+.pt-dot.done-after{border-color:var(--success);background:rgba(79,202,135,0.15);color:var(--success);}
+.pt-dot.done-cert{border-color:#b088f7;background:rgba(176,136,247,0.15);color:#b088f7;}
+.pt-dot.active-stage{box-shadow:0 0 0 3px rgba(79,142,247,0.3);border-color:var(--accent);color:var(--accent);}
+.pt-dot .check{font-size:12px;}
+.pt-label{font-size:9px;color:var(--text3);font-weight:600;}
+.pt-label.done{color:var(--text2);}
+
+/* 진행 연결선 */
+
+/* 불러오기 버튼 */
+.job-action-row{display:flex;gap:6px;padding:0 13px 12px;}
+.jab{flex:1;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);color:var(--accent);border-radius:var(--rs);padding:8px 6px;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-align:center;transition:all 0.18s;}
+.jab:active{background:rgba(79,142,247,0.2);}
+.jab.next-up{background:var(--accent);color:#fff;border-color:var(--accent);}
+.jab.already{background:var(--surface2);color:var(--text3);border-color:var(--border);}
+.jab.already:active{background:var(--surface2);}
+
+/* 완료 배지 */
+.done-badge{display:inline-block;background:rgba(79,202,135,0.12);border:1px solid rgba(79,202,135,0.3);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;}
+
+/* 빈 상태 */
+.empty-state{text-align:center;padding:50px 0 20px;}
+.empty-icon{font-size:44px;opacity:0.3;margin-bottom:12px;}
+.empty-text{font-size:13px;color:var(--text3);line-height:1.7;}
+
+/* ── 현재 작업 배너 ── */
+.active-banner{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:var(--rs);padding:9px 12px;margin-bottom:8px;display:none;align-items:center;justify-content:space-between;}
+.active-banner.show{display:flex;}
+.ab-info{}
+.ab-sub{font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.8px;margin-bottom:2px;}
+.ab-name{font-size:13px;font-weight:700;}
+.ab-stage{font-size:11px;color:var(--text2);margin-top:1px;}
+.ab-clear{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;}
+
+
+/* ── 설정 ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.license-box{background:rgba(247,168,79,0.08);border:1px solid rgba(247,168,79,0.3);border-radius:var(--r);padding:14px;margin-top:6px;margin-bottom:9px;font-size:11px;line-height:1.6;color:var(--text2);text-align:center;}
+.set-row:last-child{border-bottom:none;}
+.set-name{font-size:13px;font-weight:500;}
+.set-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.toggle{width:40px;height:22px;background:var(--border);border-radius:11px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.2s;}
+.toggle.on::after{left:21px;}
+.drive-setup{background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.2);border-radius:var(--r);padding:13px;margin-bottom:9px;}
+.ds-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:5px;}
+.ds-desc{font-size:11px;color:var(--text2);line-height:1.7;}
+.step{display:inline-block;background:var(--accent);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 7px;margin-right:4px;}
+.gas-box{background:#0a0c14;border-radius:var(--rs);padding:10px;overflow-x:auto;margin-bottom:8px;}
+.gas-box pre{font-size:9px;color:#7ec8a0;font-family:'JetBrains Mono',monospace;white-space:pre;line-height:1.6;}
+
+/* ── 목록 관리 ── */
+.list-add-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:8px 14px;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.chip button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0;line-height:1;}
+
+/* ── 토스트 ── */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--success);color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:all 0.25s;white-space:nowrap;z-index:999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.warn{background:var(--accent2);}
+.toast.err{background:var(--danger);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div class="app-title">써비의 현장 <span>보드판</span></div>
+    <div class="drive-badge" id="drive-badge" onclick="goTab('settings',null)">드라이브 미연결</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" onclick="goTab('jobs',this)">📋 작업목록</button>
+    <button class="tab active" onclick="goTab('shoot',this)">📷 촬영</button>
+    <button class="tab" onclick="goTab('settings',this)">⚙️ 설정</button>
+  </div>
+
+  <div class="screens">
+
+    <!-- ══════════════════════════
+         ★ 작업 목록 탭 ★
+    ══════════════════════════ -->
+    <div class="screen" id="tab-jobs">
+      <div class="job-list-header">
+        <div class="job-list-title">작업 목록</div>
+        <div class="job-filter-tabs">
+          <div class="job-filter-tab active" id="jf-active" onclick="setJobFilter('active')">진행중</div>
+          <div class="job-filter-tab" id="jf-done" onclick="setJobFilter('done')">완료</div>
+        </div>
+        <div class="job-count-badge" id="job-count">0건</div>
+      </div>
+      <div id="job-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">
+            촬영 탭에서 사진을 찍으면<br>
+            여기에 자동으로 쌓입니다
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════
+         촬영 탭
+    ══════════════════════════ -->
+    <div class="screen active" id="tab-shoot">
+
+      <!-- 현재 작업 배너 -->
+      <div class="active-banner" id="active-banner">
+        <div class="ab-info">
+          <div class="ab-sub">불러온 작업</div>
+          <div class="ab-name" id="ab-name">—</div>
+          <div class="ab-stage" id="ab-stage"></div>
+        </div>
+        <button class="ab-clear" onclick="clearActive()">✕</button>
+      </div>
+
+      <!-- 카메라 -->
+      <div class="cam-wrap" id="cam-wrap" onclick="placeTapMarker(event)">
+        <video id="live-video" autoplay playsinline muted></video>
+        <canvas id="snap-canvas" style="display:none"></canvas>
+        <div class="tap-markers" id="tap-markers"></div>
+        <div class="corners">
+          <div class="c c-tl"></div><div class="c c-tr"></div>
+          <div class="c c-bl"></div><div class="c c-br"></div>
+        </div>
+        <div class="live-board show" id="live-board">
+          <div class="lb-row"><div class="lb-label">단지명</div><div class="lb-val" id="lbv-complex"></div></div>
+          <div class="lb-row"><div class="lb-label">동-호</div><div class="lb-val" id="lbv-dongho"></div></div>
+          <div class="lb-row"><div class="lb-label">위치</div><div class="lb-val" id="lbv-location"></div></div>
+          <div class="lb-row"><div class="lb-label">하자내용</div><div class="lb-val" id="lbv-defect"></div></div>
+          <div class="lb-row"><div class="lb-label">작업사항</div><div class="lb-val lb-stages" id="lbv-stage"></div></div>
+          <div class="lb-row"><div class="lb-label">산출식/물량</div><div class="lb-val" id="lbv-quantity"></div></div>
+        </div>
+      </div>
+
+      <!-- 미리보기 -->
+      <div class="preview-wrap" id="preview-wrap">
+        <canvas id="composite-canvas" style="width:100%;border-radius:var(--r);display:block;"></canvas>
+        <div class="corners">
+          <div class="c c-tl"></div><div class="c c-tr"></div>
+          <div class="c c-bl"></div><div class="c c-br"></div>
+        </div>
+      </div>
+
+      <!-- 촬영 컨트롤 -->
+      <div class="cam-controls" id="cam-controls">
+        <div class="side-btn" id="marker-toggle-btn" onclick="toggleMarkerMode()" title="공사 위치 마커">📍</div>
+        <div class="shutter" onclick="checkAndShoot()">📷</div>
+        <div class="side-btn" onclick="generateCertificate()" title="완료확인서 생성">📄</div>
+      </div>
+
+      <!-- ➕ 추가: 마커 스타일(모양/색상/크기) 선택 패널 — 마커 모드 켜면 나타남 -->
+      <div class="marker-panel" id="marker-panel">
+        <div class="marker-panel-row">
+          <div class="marker-shape-btn active" data-shape="circle" onclick="setMarkerShape('circle',this)">⭕</div>
+          <div class="marker-shape-btn" data-shape="arrow" onclick="setMarkerShape('arrow',this)">➜</div>
+          <div class="marker-shape-btn" data-shape="text" onclick="setMarkerShape('text',this)">Ｔ</div>
+          <input type="text" id="marker-text-input" placeholder="예: 균열" maxlength="10" style="display:none;width:130px;">
+        </div>
+        <div class="marker-panel-row">
+          <div class="marker-color-btn active" style="background:#ff3b30;" onclick="setMarkerColor('#ff3b30',this)"></div>
+          <div class="marker-color-btn" style="background:#4f8ef7;" onclick="setMarkerColor('#4f8ef7',this)"></div>
+          <div class="marker-color-btn" style="background:#ffd60a;" onclick="setMarkerColor('#ffd60a',this)"></div>
+          <div class="marker-color-btn" style="background:#4fca87;" onclick="setMarkerColor('#4fca87',this)"></div>
+          <div class="marker-color-btn" style="background:#000;" onclick="setMarkerColor('#000',this)"></div>
+          <button class="marker-size-btn" style="width:auto;padding:0 8px;color:var(--danger);" onclick="deleteActiveMarker()">지우기</button>
+        </div>
+      </div>
+
+      <!-- 저장/재촬영 -->
+      <div id="after-shoot" style="display:none;margin-bottom:8px;">
+        <button class="upload-btn" id="upload-btn" onclick="uploadDrive()">
+          <span>☁️</span> 구글 드라이브에 저장
+        </button>
+        <button class="retake-btn" onclick="retake()">↩ 다시 촬영</button>
+      </div>
+
+      <!-- 정보 입력 -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <div class="card-label" style="margin-bottom:0;">사진 정보</div>
+          <div class="side-btn" onclick="clearFields()" style="width:30px;height:30px;font-size:13px;">🗑️</div>
+        </div>
+        <div class="fname-preview">
+          <div class="fname-label">저장 파일명</div>
+          <div class="fname-val" id="fname-val">—</div>
+        </div>
+        <div class="ig">
+          <div class="il">접수번호</div>
+          <div class="ir">
+            <input type="text" id="f-receipt" oninput="formatReceipt(this)">
+            <button class="mic-mini" id="mic-receipt" onclick="voiceFor('receipt')">🎤</button>
+          </div>
+        </div>
+        <div class="ig">
+          <div class="il">단지명</div>
+          <div class="ir">
+            <input type="text" id="f-complex" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('complex')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-complex"></div>
+        </div>
+        <div class="ig">
+          <div class="il">동 / 호</div>
+          <div class="ir">
+            <input type="text" id="f-dong" oninput="updateFname()">
+            <input type="text" id="f-ho" oninput="updateFname()">
+            <button class="mic-mini" id="mic-dongho" onclick="voiceFor('dongho')">🎤</button>
+          </div>
+        </div>
+        <div class="ig">
+          <div class="il">공종</div>
+          <div class="ir">
+            <input type="text" id="f-worktype" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('worktype')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-worktype"></div>
+        </div>
+        <div class="ig">
+          <div class="il">위치</div>
+          <div class="ir">
+            <input type="text" id="f-location" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('location')">▾</button>
+          </div>
+          <div class="dd-panel" id="dd-location"></div>
+        </div>
+        <div class="ig">
+          <div class="il">하자내용</div>
+          <div class="ir">
+            <input type="text" id="f-defect" oninput="updateFname()">
+            <button class="dd-toggle" onclick="toggleDropdown('defect')">▾</button>
+            <button class="mic-mini" id="mic-defect" onclick="voiceFor('defect')">🎤</button>
+          </div>
+          <div class="dd-panel" id="dd-defect"></div>
+        </div>
+        <div class="ig">
+          <div class="il">산출식</div>
+          <div class="ir">
+            <input type="text" id="f-formula" oninput="calcFormula(this)">
+            <button class="mic-mini" id="mic-formula" onclick="voiceForFormula()">🎤</button>
+          </div>
+        </div>
+        <div class="ig">
+          <div class="il">물량</div>
+          <div class="ir">
+            <input type="text" id="f-quantity" oninput="updateFname()">
+            <button class="mic-mini" id="mic-quantity" onclick="voiceFor('quantity')">🎤</button>
+          </div>
+        </div>
+        <div class="ig">
+          <div class="il">촬영 구분</div>
+          <div class="stage-btns">
+            <button class="sb" id="sb-before" onclick="setStage('전','before')">전</button>
+            <button class="sb" id="sb-during" onclick="setStage('중','during')">중</button>
+            <button class="sb" id="sb-after"  onclick="setStage('후','after')">후</button>
+            <button class="sb" id="sb-check"  onclick="setStage('점검','check')" style="font-size:11px;">점검</button>
+          </div>
+          <input type="hidden" id="f-stage">
+        </div>
+      </div>
+
+    </div><!-- /shoot -->
+
+    <!-- ══ 설정 ══ -->
+    <div class="screen" id="tab-settings">
+      <div class="card">
+        <div class="card-label">기기 코드</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">이 코드를 관리자에게 전달하면 사용 승인을 받을 수 있습니다</label>
+          <div class="ir">
+            <input type="text" id="device-code-val" readonly>
+            <button class="dd-toggle" onclick="navigator.clipboard.writeText(document.getElementById('device-code-val').value).then(()=>showToast('📋 기기 코드 복사됨'))">📋</button>
+          </div>
+        </div>
+      </div>
+      <div class="drive-setup">
+        <div class="ds-title">☁️ 구글 드라이브 연동</div>
+        <div class="ds-desc">
+          <span class="step">1</span>아래 코드 복사<br>
+          <span class="step">2</span><a href="https://script.google.com" target="_blank" style="color:var(--accent)">script.google.com</a> → 새 프로젝트 → 붙여넣기<br>
+          <span class="step">3</span>배포 → 웹앱 → 액세스: 모든 사용자<br>
+          <span class="step">4</span>배포 URL 아래 입력
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Apps Script 코드</div>
+        <div class="gas-box">
+          <pre id="gas-code">// 승인할 기기 코드는 코드가 아니라 구글 시트에서 관리합니다.
+// 시트의 A열(A2부터)에 기기 코드를 한 줄에 하나씩 추가하면 바로 승인됩니다.
+// A열에 'ALLOW_ALL'이 있으면 모든 기기를 허용합니다.
+var SHEET_ID = '1EeElUMyOZexzUoITQVe6_VvqRp13RaTTGvvSSIdbu3I';
+
+function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+
+  if (data.action === 'ping') {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (data.action === 'checkAccess') {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+    var lastRow = sheet.getLastRow();
+    var codes = lastRow < 2 ? [] : sheet.getRange(2, 1, lastRow - 1, 1).getValues()
+      .map(function(row){ return row[0]; })
+      .filter(function(v){ return v !== ''; });
+    var allowed = codes.indexOf('ALLOW_ALL') !== -1 || codes.indexOf(data.deviceId) !== -1;
+    return ContentService
+      .createTextOutput(JSON.stringify({ allowed: allowed }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var imgData    = data.image;
+  var fileName   = data.fileName;
+  var folderID   = data.folderId;
+  var jobFolder  = data.folderName; // ➕ 추가: 같은 작업끼리 모일 하위 폴더명(없으면 평평하게 저장)
+  var bytes = Utilities.base64Decode(
+    imgData.replace(/^data:image\/\w+;base64,/, '')
+  );
+  var blob   = Utilities.newBlob(bytes, 'image/jpeg', fileName);
+  var folder = DriveApp.getFolderById(folderID);
+  if (jobFolder) { // ➕ 추가: 같은 이름의 하위 폴더가 있으면 그걸 쓰고, 없으면 새로 만듦
+    var existing = folder.getFoldersByName(jobFolder);
+    folder = existing.hasNext() ? existing.next() : folder.createFolder(jobFolder);
+  }
+  var file   = folder.createFile(blob);
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status:'ok', fileId:file.getId(), fileName:file.getName()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+        <button class="retake-btn" onclick="copyCode()">📋 코드 복사</button>
+      </div>
+      <div class="card">
+        <div class="card-label">드라이브 연동</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">Apps Script 배포 URL</label>
+          <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/..." oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">저장 폴더 ID</label>
+          <div class="ir">
+            <input type="text" id="s-folder" placeholder="드라이브 폴더 URL 마지막 부분" oninput="saveSet()">
+            <button style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);padding:8px 10px;border-radius:var(--rs);font-size:15px;cursor:pointer;white-space:nowrap;flex-shrink:0;" onclick="testConn()" id="test-btn">🔗</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">워터마크 설정</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">조직명 (워터마크)</label>
+          <input type="text" id="s-org" oninput="saveSet()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">완료확인서 정보</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공사명</label>
+          <input type="text" id="s-projectname" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">보수 업체</label>
+          <input type="text" id="s-contractor" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">작업자</label>
+          <input type="text" id="s-worker" oninput="saveSet()">
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">현장대리인</label>
+          <input type="text" id="s-manager" oninput="saveSet()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">목록 관리</div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">단지명 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-complex">
+            <button class="list-add-btn" onclick="addListItem('complex')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-complex"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">공종 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-worktype">
+            <button class="list-add-btn" onclick="addListItem('worktype')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-worktype"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">위치 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-location">
+            <button class="list-add-btn" onclick="addListItem('location')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-location"></div>
+        </div>
+        <div class="ig">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);display:block;margin-bottom:3px;">하자내용 목록</label>
+          <div class="ir">
+            <input type="text" id="nl-defect">
+            <button class="list-add-btn" onclick="addListItem('defect')">추가</button>
+          </div>
+          <div class="chip-wrap" id="chips-defect"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">옵션</div>
+        <div class="set-row">
+          <div><div class="set-name">워터마크</div><div class="set-desc">사진 하단 조직명</div></div>
+          <div class="toggle on" id="t-wm" onclick="this.classList.toggle('on');renderLiveBoard()"></div>
+        </div>
+        <div class="set-row">
+          <div><div class="set-name">저장 후 구분 자동 진행</div><div class="set-desc">전→중→후 자동 이동</div></div>
+          <div class="toggle on" id="t-next" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+      <div class="license-box">
+        ⚠ 이 프로그램은 개인 라이선스 소프트웨어입니다.<br>
+        무단 복제 · 배포 · 사용을 금지합니다.<br>
+        위반 시 법적 책임을 질 수 있습니다.<br><br>
+        개발자: 김태섭 | 010-3465-0369
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title">이 파일명으로 촬영하시겠습니까?</div>
+    <div class="confirm-fname" id="confirm-fname-val">—</div>
+    <div class="confirm-warn" id="confirm-warn" style="display:none;"></div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="cancelShootConfirm()">돌아가기</button>
+      <button class="confirm-exception" onclick="exceptionShoot()">예외</button>
+      <button class="confirm-go" id="confirm-go-btn" onclick="confirmShoot()">촬영</button>
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 작업 삭제 확인창(촬영 확인창과 같은 디자인) -->
+<div class="confirm-modal" id="delete-modal">
+  <div class="confirm-box">
+    <div class="confirm-title">이 작업을 삭제하시겠습니까?</div>
+    <div class="confirm-fname" id="delete-job-name">—</div>
+    <div class="confirm-warn" style="display:block;">⚠ 삭제하면 되돌릴 수 없습니다</div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="cancelDeleteJob()">취소</button>
+      <button class="confirm-go" style="background:var(--danger);border-color:var(--danger);" onclick="confirmDeleteJob()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 완료확인서 미리보기 확인창(촬영 확인창과 같은 디자인 + 이미지 미리보기) -->
+<div class="confirm-modal" id="cert-modal">
+  <div class="confirm-box" style="max-width:340px;">
+    <div class="confirm-title">완료확인서를 저장하시겠습니까?</div>
+    <div class="cert-preview-wrap"><img id="cert-preview-img" src="" alt=""></div>
+    <div class="confirm-fname" id="cert-fname-val">—</div>
+    <div class="confirm-btns" style="margin-bottom:10px;">
+      <button class="confirm-back" onclick="openSigPad('tenant')">✍️ 입주자 서명</button>
+      <button class="confirm-back" onclick="openSigPad('office')">✍️ 관리소 서명</button>
+    </div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="cancelCertModal()">돌아가기</button>
+      <button class="confirm-go" onclick="confirmCertSave()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 서명 패드(이름+그림 서명) -->
+<div class="confirm-modal" id="sig-modal">
+  <div class="confirm-box" style="max-width:340px;">
+    <div class="confirm-title" id="sig-title">서명</div>
+    <div class="ir" style="margin-bottom:10px;">
+      <input type="text" id="sig-name" placeholder="이름 입력">
+      <button class="mic-mini" id="mic-signame" onclick="voiceForSigName()">🎤</button>
+    </div>
+    <div class="sig-pad-wrap"><canvas id="sig-canvas"></canvas></div>
+    <div class="confirm-btns">
+      <button class="confirm-back" onclick="clearSigPad()">지우기</button>
+      <button class="confirm-back" onclick="cancelSigPad()">취소</button>
+      <button class="confirm-go" onclick="completeSigPad()">완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 기기 승인 검사가 끝날 때까지 화면을 가리는 로딩 가림막(검사 결과가 나오기 전엔 카메라/화면을 못 보게 함) -->
+<div id="license-gate" style="position:fixed;inset:0;background:#05060a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:2500;">
+  <div style="font-size:28px;">🔒</div>
+  <div style="color:var(--text2);font-size:13px;">사용 승인 확인 중...</div>
+</div>
+
+<!-- ➕ 추가: 승인 안 된 기기를 막는 잠금 화면 -->
+<div class="confirm-modal" id="lock-overlay" style="z-index:2000;">
+  <div class="confirm-box" style="max-width:320px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:10px;">🔒</div>
+    <div class="confirm-title">사용 승인이 필요합니다</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="confirm-fname" id="lock-device-code" style="flex:1;margin-bottom:0;">—</div>
+      <button class="dd-toggle" onclick="navigator.clipboard.writeText(document.getElementById('lock-device-code').textContent).then(()=>showToast('📋 기기 코드 복사됨'))">📋</button>
+    </div>
+    <div class="confirm-warn" style="display:block;margin-top:10px;">이 기기 코드를 관리자에게 전달해<br>사용 승인을 요청하세요</div>
+    <div class="license-box">
+      ⚠ 이 프로그램은 개인 라이선스 소프트웨어입니다.<br>
+      무단 복제 · 배포 · 사용을 금지합니다.<br>
+      위반 시 법적 책임을 질 수 있습니다.<br><br>
+      개발자: 김태섭 | 010-3465-0369
+    </div>
+  </div>
+</div>
+
+<!-- ➕ 추가: 같은 단계로 찍은 여러 장을 좌우로 넘겨보는 뷰어 -->
+<div class="shot-viewer" id="shot-viewer">
+  <div class="sv-close" onclick="closeShotViewer()">✕</div>
+  <div class="sv-counter" id="sv-counter">1/1</div>
+  <div class="sv-stage" id="sv-stage-time"></div>
+  <div class="sv-img-wrap" id="sv-img-wrap">
+    <img id="sv-img" src="" alt="">
+  </div>
+  <button class="sv-nav sv-prev" onclick="shotViewerMove(-1)">‹</button>
+  <button class="sv-nav sv-next" onclick="shotViewerMove(1)">›</button>
+</div>
+
+<script>
+// ════════════════════════
+//  상태
+// ════════════════════════
+const A = {
+  stream:null,
+  compositeDataUrl:null,
+  jobs:[],          // 찍으면서 자동 생성
+  activeJobId:null,
+  currentStage:'',
+  listening:false,
+  lists:{complex:[],worktype:[],location:[],defect:[]},
+  jobFilter:'active', // ➕ 추가: 작업목록 필터('active'=진행중, 'done'=완료)
+  tapMarkers:[], // ✏️ 변경: 마커 1개(객체)→여러 개(배열)로 변경, 각 마커={id,x,y,shape,color,width,height,angle,text}
+  activeMarkerId:null, // ➕ 추가: 지금 선택된(점선 테두리로 표시되는) 마커의 id — "지우기"는 이 마커만 지움
+  markerMode:false, // ➕ 추가: "마커" 버튼을 눌러야만 탭이 마커로 인식되는 모드
+  markerStyle:{shape:'circle', color:'#ff3b30', width:28, height:28, angle:0}, // 새로 찍을 마커의 기본값 템플릿(angle=화살표 회전 각도, 라디안)
+};
+const CAM_RATIO = 1.5; // ✏️ 변경: 2.174→1.5, 화면/사진 세로 범위 확대. CSS의 #live-video aspect-ratio와 반드시 같은 값을 써야 함 (라이브 화면=촬영 결과 일치 보장)
+function getDeviceId(){
+  let id=localStorage.getItem('fb4_device_id');
+  if(!id){ id=Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).slice(-4).toUpperCase(); localStorage.setItem('fb4_device_id', id); }
+  return id;
+}
+async function checkLicense(){
+  const code=getDeviceId();
+  const el=document.getElementById('device-code-val'); if(el) el.value=code;
+  const lockEl=document.getElementById('lock-device-code'); if(lockEl) lockEl.textContent=code;
+  const gate=document.getElementById('license-gate'); // ➕ 추가: 검사 끝날 때까지 화면을 가리는 가림막
+  const licenseCheckUrl=document.getElementById('s-url').value; // ✏️ 변경: 별도 상수 대신, 이미 설정 탭에 입력된 드라이브 연동 주소를 그대로 사용(같은 Apps Script가 둘 다 처리)
+  if(!licenseCheckUrl){ if(gate) gate.style.display='none'; return; } // ✏️ 변경: 검사 자체를 안 하면 가림막도 바로 치움
+  try{
+    const res=await fetch(licenseCheckUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'checkAccess',deviceId:code})}); // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
+    const json=await res.json();
+    if(json.allowed===false){ document.getElementById('lock-overlay').classList.add('show'); }
+  }catch(e){ /* 네트워크 오류 시엔 일단 통과시켜서 현장에서 앱이 먹통되지 않게 함 */ }
+  finally{ if(gate) gate.style.display='none'; } // ➕ 추가: 검사가 끝나면(승인/거부/오류 모두) 가림막을 치움 — 거부된 경우엔 lock-overlay가 그 자리를 대신 덮음
+}
+const STAGES = ['전','중','후'];
+const STAGE_KEY = {'전':'before','중':'during','후':'after','점검':'check'};
+const STAGE_COLORS = {before:'#7ec8a0',during:'#f7a84f',after:'#4fca87',check:'#4f8ef7',done:'#b088f7'};
+
+// ════════════════════════
+//  초기화
+// ════════════════════════
+loadAll(); startCam(); updateFname(); updateDriveBadge(); renderJobs();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); } // ➕ 추가: PWA 설치 가능하게 + 네트워크 우선 캐싱
+checkLicense(); // ➕ 추가: 무단 배포/사용 방지 — 허가된 기기인지 확인
+
+// ════════════════════════
+//  탭
+// ════════════════════════
+function goTab(name, el) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='jobs') renderJobs();
+}
+
+// ════════════════════════
+//  카메라
+// ════════════════════════
+async function startCam() {
+  try {
+    if(A.stream) A.stream.getTracks().forEach(t=>t.stop());
+    A.stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}, audio:false
+    });
+    const vid=document.getElementById('live-video');
+    vid.srcObject = A.stream;
+    vid.onloadedmetadata = syncLiveBoardSize;
+    show('cam-wrap'); hide('preview-wrap');
+    show('cam-controls'); hide('after-shoot');
+  } catch(e){ showToast('카메라 권한을 허용해주세요','err'); }
+}
+document.addEventListener('visibilitychange', ()=>{ // ➕ 추가: 다른 일 하다가 돌아왔을 때 멈춰있던 카메라를 자동으로 다시 켬
+  if(document.hidden) return;
+  if(!document.getElementById('tab-shoot').classList.contains('active')) return; // 촬영 탭이 아니면 건너뜀
+  if(document.getElementById('confirm-modal').classList.contains('show')) return; // 확인 팝업이 떠있으면 건너뜀
+  startCam();
+});
+
+const REQUIRED_FIELDS=[
+  ['f-receipt','접수번호'],['f-complex','단지명'],['f-dong','동'],['f-ho','호'],
+  ['f-worktype','공종'],['f-location','위치'],['f-defect','하자내용'],
+];
+function checkAndShoot(){
+  // ✏️ 변경: 빈 칸 있어도 확인창은 항상 띄우고, 안에서 경고+촬영버튼 비활성화로 처리(예외 버튼은 항상 가능)
+  const missing=[];
+  for(const [id,label] of REQUIRED_FIELDS){
+    if(!document.getElementById(id).value.trim()) missing.push(label);
+  }
+  if(!A.currentStage) missing.push('촬영 구분');
+
+  document.getElementById('confirm-fname-val').textContent=buildFname();
+  const warn=document.getElementById('confirm-warn');
+  const goBtn=document.getElementById('confirm-go-btn');
+  if(missing.length){
+    warn.textContent='⚠ '+missing.join(', ')+' 항목이 비어있습니다';
+    warn.style.display='block';
+    goBtn.disabled=true;
+  } else {
+    warn.style.display='none';
+    goBtn.disabled=false;
+  }
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function cancelShootConfirm(){ document.getElementById('confirm-modal').classList.remove('show'); }
+function confirmShoot(){
+  if(document.getElementById('confirm-go-btn').disabled) return;
+  document.getElementById('confirm-modal').classList.remove('show'); shoot();
+}
+function exceptionShoot(){ document.getElementById('confirm-modal').classList.remove('show'); shoot(); } // ➕ 추가: 빈 칸 있어도 검사 무시하고 바로 촬영
+function shoot() {
+  const vid=document.getElementById('live-video');
+  const snp=document.getElementById('snap-canvas');
+  const vw=vid.videoWidth||1280, vh=vid.videoHeight||720;
+  // 화면에 보이던 비율(CAM_RATIO, CSS aspect-ratio와 동일한 고정값)과 똑같이 가운데 기준으로 잘라서 찍음
+  const targetRatio = CAM_RATIO;
+  const srcRatio = vw / vh;
+  let sx=0, sy=0, sw=vw, sh=vh;
+  if(srcRatio > targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2; }
+  else { sh=vw/targetRatio; sy=(vh-sh)/2; }
+  snp.width=sw; snp.height=sh;
+  snp.getContext('2d').drawImage(vid, sx,sy,sw,sh, 0,0,sw,sh);
+  compositeOverlay(snp,()=>{
+    const comp=document.getElementById('composite-canvas');
+    comp.width=snp.width; comp.height=snp.height;
+    comp.getContext('2d').drawImage(snp,0,0);
+    A.compositeDataUrl=snp.toDataURL('image/jpeg',0.92);
+    saveToGallery(); // ➕ 추가: 업로드 성공/실패와 무관하게 촬영하면 항상 폰에도 저장
+    const shotId='shot_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); // ➕ 추가: 이 사진을 IndexedDB에서 찾기 위한 고유 id
+    savePhotoToDB(shotId, A.compositeDataUrl); // ➕ 추가: 다음날 다시 봐도 사진이 남아있도록 IndexedDB에 원본(보드판 포함) 저장
+    updateJobAfterSave(getFieldMeta(), A.currentStage, buildFname(), shotId); // ➕ 추가: 촬영 성공 시점에 바로 작업목록 반영(업로드 버튼을 눌러야 반영되던 것을 앞당김)
+    hide('cam-wrap'); hide('cam-controls');
+    show('preview-wrap'); show('after-shoot');
+    updateFname();
+    uploadDrive(); // ✏️ 변경: 토글 검사 없이 항상 자동 업로드(실패하면 "☁️ 구글 드라이브에 저장" 버튼으로 재시도 가능)
+  });
+}
+
+function compositeOverlay(canvas, cb) {
+  const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  const v=id=>document.getElementById(id).value;
+  const complex=v('f-complex');
+  const dongHo=[v('f-dong')&&v('f-dong')+'동',v('f-ho')&&v('f-ho')+'호'].filter(Boolean).join(' ');
+  const location=v('f-location');
+  const stage=A.currentStage;
+  const org=document.getElementById('s-org').value;
+  const wmOn=document.getElementById('t-wm').classList.contains('on');
+
+  drawTapMarkerOnCanvas(ctx, W, H); // ➕ 추가: 탭으로 찍은 공사 위치 마커를 사진에도 합성
+
+  const hasAny = complex||dongHo||location||stage;
+  if(!hasAny && !wmOn){ cb(); return; }
+
+  const defect=v('f-defect');
+  const quantity=v('f-quantity');
+  const formula=v('f-formula');
+  const formulaQty=formula?formula+'='+quantity:quantity; // ✏️ 변경: 산출식이 있으면 "산출식=물량" 형태로 표시
+  const ROWS=[['단지명',complex],['동-호',dongHo],['위치',location],['하자내용',defect],['작업사항',null],['산출식/물량',formulaQty]];
+  const tableW=W*0.36, labelW=tableW*0.34, valueW=tableW-labelW; // ✏️ 변경: 표 너비 10% 축소(0.4→0.36)
+  const rowH=H*0.06075, x0=0, y0=H-ROWS.length*rowH; // ✏️ 변경: 표 높이 10% 축소(0.0675→0.06075)
+  const fs=rowH*0.42;
+
+  ctx.textBaseline='middle';
+  ctx.lineWidth=Math.max(1,W*0.0012);
+  ctx.strokeStyle='#000';
+
+  ROWS.forEach(([label,val],i)=>{
+    const y=y0+i*rowH;
+    ctx.fillStyle='#fff'; ctx.fillRect(x0,y,labelW,rowH); // ✏️ 변경: 라벨 배경 회색→흰색
+    ctx.fillStyle='#fff';    ctx.fillRect(x0+labelW,y,valueW,rowH);
+    ctx.strokeRect(x0,y,labelW,rowH);
+    ctx.strokeRect(x0+labelW,y,valueW,rowH);
+
+    ctx.fillStyle='#000'; ctx.textAlign='left';
+    ctx.font=`700 ${fs}px 'Noto Sans KR',sans-serif`;
+    ctx.fillText(label,x0+labelW*0.08,y+rowH/2);
+
+    if(label==='작업사항') {
+      const stages=['전','중','후','점검'];
+      const segW=valueW/stages.length;
+      ctx.font=`700 ${fs*0.85}px 'Noto Sans KR',sans-serif`;
+      ctx.textAlign='center';
+      stages.forEach((s,si)=>{
+        ctx.fillText(stage===s?`[${s}]`:'[ ]', x0+labelW+segW*si+segW/2, y+rowH/2);
+      });
+      ctx.textAlign='left';
+    } else {
+      const txt=(val||'').length>16?val.slice(0,16)+'…':(val||'');
+      ctx.fillText(txt,x0+labelW+valueW*0.06,y+rowH/2);
+    }
+  });
+
+  if(wmOn&&org){
+    ctx.font=`700 ${fs}px 'Noto Sans KR',sans-serif`;
+    ctx.textAlign='right';
+    const tw=ctx.measureText(org).width, px=H*0.01;
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(W-tw-px*2-W*0.02,H-rowH-H*0.01,tw+px*2,rowH);
+    ctx.fillStyle='#fff';
+    ctx.fillText(org,W-W*0.02-px,H-rowH-H*0.01+rowH/2);
+    ctx.textAlign='left';
+  }
+  cb();
+}
+function toggleMarkerMode(){
+  A.markerMode=!A.markerMode;
+  document.getElementById('marker-toggle-btn').classList.toggle('mode-on', A.markerMode);
+  document.getElementById('marker-panel').classList.toggle('show', A.markerMode);
+}
+function setMarkerShape(shape, el){
+  A.markerStyle.shape=shape; // 다음에 새로 찍을 마커의 기본 모양
+  document.querySelectorAll('.marker-shape-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('marker-text-input').style.display = shape==='text' ? 'inline-block' : 'none';
+  const m=A.tapMarkers.find(mk=>mk.id===A.activeMarkerId); // ✏️ 변경: 선택된(점선 테두리) 마커가 있으면 그 마커 모양도 바로 바꿔줌
+  if(m){ m.shape=shape; renderMarkerEl(m); }
+}
+function setMarkerColor(color, el){
+  A.markerStyle.color=color; // 다음에 새로 찍을 마커의 기본 색상
+  document.querySelectorAll('.marker-color-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const m=A.tapMarkers.find(mk=>mk.id===A.activeMarkerId); // ✏️ 변경: 선택된 마커가 있으면 그 마커 색상도 바로 바꿔줌
+  if(m){ m.color=color; renderMarkerEl(m); }
+}
+function renderMarkerEl(marker){
+  // ✏️ 변경: 모양이 안 바뀌었으면 안쪽 요소를 다시 만들지 않고 스타일만 갱신(드래그 중에도 부드럽게)
+  const el=document.getElementById('tap-marker-'+marker.id);
+  if(!el) return;
+  const {shape,color,width,height,angle}=marker;
+  el.style.left=(marker.x*100)+'%';
+  el.style.top=(marker.y*100)+'%';
+  el.style.width=width+'px'; el.style.height=height+'px';
+  el.style.color=color;
+  el.classList.toggle('selected', marker.id===A.activeMarkerId);
+  if(el.dataset.shape!==shape){ buildMarkerSkeleton(el, shape); el.dataset.shape=shape; } // ➕ 추가: 모양이 바뀐 순간(또는 첫 생성)에만 안쪽 요소를 새로 만듦
+  if(shape==='circle'){
+    el.style.borderRadius='50%'; el.style.border='2px solid '+color; el.style.background='none';
+  } else if(shape==='arrow'){
+    el.style.border='none'; el.style.background='none';
+    const headLen=Math.min(18, width*0.5), headW=Math.max(8, height*0.7), lineW=Math.max(2, height*0.16); // ➕ 추가: 화살촉은 거의 고정 크기, 선(길이)만 width를 따라 늘어남
+    const deg=(angle||0)*180/Math.PI;
+    const wrap=el.querySelector('.arrow-wrap'), line=el.querySelector('.arrow-line'), head=el.querySelector('.arrow-head');
+    wrap.style.width=width+'px'; wrap.style.transform=`translate(-50%,-50%) rotate(${deg}deg)`;
+    line.style.width=`calc(100% - ${headLen}px)`; line.style.height=lineW+'px'; line.style.background=color;
+    head.style.borderTop=`${headW/2}px solid transparent`; head.style.borderBottom=`${headW/2}px solid transparent`; head.style.borderLeft=`${headLen}px solid ${color}`;
+  } else if(shape==='text'){
+    el.style.border='none'; el.style.background='none';
+    const base=28, sx=width/base, sy=height/base;
+    const span=el.querySelector('.marker-content');
+    span.textContent=marker.text||'';
+    span.style.fontSize=(base*0.6)+'px'; span.style.transform=`scale(${sx},${sy})`;
+  }
+}
+function buildMarkerSkeleton(el, shape){
+  // ➕ 추가: 마커 모양별 "뼈대" DOM을 한 번만 만들어둠(이후엔 renderMarkerEl이 스타일만 바꿔서 재사용)
+  if(shape==='arrow'){
+    el.innerHTML=`<div class="arrow-wrap" style="position:absolute;left:50%;top:50%;height:0;">
+      <div class="arrow-line" style="position:absolute;left:0;top:0;transform:translateY(-50%);"></div>
+      <div class="arrow-head" style="position:absolute;right:0;top:0;width:0;height:0;transform:translateY(-50%);"></div>
+    </div>`;
+  } else if(shape==='text'){
+    el.innerHTML=`<span class="marker-content" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;white-space:nowrap;"></span>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+function renderAllMarkers(){
+  // ➕ 추가: A.tapMarkers 배열 전체를 화면의 #tap-markers 컨테이너와 맞춰줌(없는 건 새로 만들고, 지워진 건 DOM에서도 제거)
+  const box=document.getElementById('tap-markers');
+  const ids=A.tapMarkers.map(m=>'tap-marker-'+m.id);
+  [...box.children].forEach(el=>{ if(!ids.includes(el.id)) el.remove(); }); // ➕ 추가: 배열에서 사라진 마커는 화면에서도 제거
+  A.tapMarkers.forEach(marker=>{
+    let el=document.getElementById('tap-marker-'+marker.id);
+    if(!el){
+      el=document.createElement('div');
+      el.className='tap-marker'; el.id='tap-marker-'+marker.id;
+      el.onmousedown=e=>_markerDragStart(e,marker.id);
+      el.ontouchstart=e=>_markerDragStart(e,marker.id);
+      box.appendChild(el);
+    }
+    renderMarkerEl(marker);
+  });
+}
+function placeTapMarker(e){
+  // ✏️ 변경: "마커" 모드가 켜져있을 때만 탭이 마커로 인식됨(평소엔 화면을 자유롭게 탭해도 안전). 빈 곳을 탭하면 새 마커를 추가함(기존 마커들은 그대로 유지)
+  if(!A.markerMode) return;
+  if(e.target.closest && e.target.closest('.tap-marker')) return; // ✏️ 변경: 이미 있는 마커 몸통을 누른 건 여기서 처리하지 않음(선택/이동/크기조절은 그 마커 자신의 드래그 로직이 담당)
+  const wrap=document.getElementById('cam-wrap');
+  const rect=wrap.getBoundingClientRect();
+  const x=(e.clientX-rect.left)/rect.width;
+  const y=(e.clientY-rect.top)/rect.height;
+  const {shape,color,width,height,angle}=A.markerStyle;
+  const text=document.getElementById('marker-text-input').value;
+  const id=Date.now()+'_'+Math.random().toString(36).slice(2,6); // ➕ 추가: 마커마다 구별할 고유 id
+  A.tapMarkers.push({id,x,y,shape,color,width,height,angle:angle||0,text});
+  A.activeMarkerId=id; // ➕ 추가: 새로 찍은 마커가 자동으로 선택 상태가 됨
+  renderAllMarkers();
+}
+function deleteActiveMarker(){
+  // ➕ 추가: 전체 삭제가 아니라, 지금 선택(점선 테두리)된 마커 1개만 지움
+  if(A.activeMarkerId==null){ showToast('지울 마커를 먼저 선택하세요','warn'); return; }
+  A.tapMarkers=A.tapMarkers.filter(m=>m.id!==A.activeMarkerId);
+  A.activeMarkerId=null;
+  renderAllMarkers();
+}
+function clearAllMarkers(){
+  // ✏️ 변경: 재촬영(retake) 시 전체 초기화용 — 기존 clearTapMarker를 다중 마커에 맞게 이름/내용 변경
+  A.tapMarkers=[]; A.activeMarkerId=null;
+  document.getElementById('tap-markers').innerHTML='';
+}
+// ✏️ 변경: "짧게 누르고 바로 끌기"=크기/각도 조절, "길게(0.45초) 누르고 있다가 끌기"=자유 이동, "움직임 없이 떼기"=그 마커 선택 — 마커 1개를 직접 지정해 드래그하므로 id로 구분
+const LONG_PRESS_MS = 450;
+const _markerDrag={mode:'idle',id:null,startX:0,startY:0,startW:0,startH:0,startAngle:0,startAngleAtGrab:0,startRadius:0,signX:1,signY:1,centerX:0,centerY:0,offsetX:0,offsetY:0,timer:null};
+function _markerDragPos(e){ const p=e.touches?e.touches[0]:e; return [p.clientX,p.clientY]; }
+function _markerDragStart(e,id){
+  const marker=A.tapMarkers.find(m=>m.id===id);
+  if(!marker) return;
+  const el=document.getElementById('tap-marker-'+id);
+  const rect=el.getBoundingClientRect();
+  const camRect=document.getElementById('cam-wrap').getBoundingClientRect();
+  const [x,y]=_markerDragPos(e);
+  _markerDrag.mode='pending'; _markerDrag.id=id;
+  _markerDrag.centerX=rect.left+rect.width/2; _markerDrag.centerY=rect.top+rect.height/2;
+  _markerDrag.signX = x>=_markerDrag.centerX?1:-1; _markerDrag.signY = y>=_markerDrag.centerY?1:-1; // ➕ 추가: 중심 기준 어느 쪽을 눌렀는지 기억해서, 바깥쪽으로 끌면 항상 커지도록
+  _markerDrag.startX=x; _markerDrag.startY=y;
+  _markerDrag.startW=marker.width; _markerDrag.startH=marker.height;
+  _markerDrag.startAngle=marker.angle||0; // ✏️ 변경: 지금 손가락 각도가 아니라 "이전 각도 대비 얼마나 더 돌렸는지"로 계산하기 위한 기준값
+  _markerDrag.startAngleAtGrab=Math.atan2(y-_markerDrag.centerY, x-_markerDrag.centerX);
+  _markerDrag.startRadius=Math.hypot(x-_markerDrag.centerX, y-_markerDrag.centerY);
+  _markerDrag.offsetX = x - (camRect.left + marker.x*camRect.width); // ✏️ 변경: 마커 중앙이 아니라 "내가 처음 누른 지점"과 손가락의 차이를 기억 → 이동 시 마커가 손가락 쪽으로 튀지 않음
+  _markerDrag.offsetY = y - (camRect.top + marker.y*camRect.height);
+  clearTimeout(_markerDrag.timer); // ➕ 추가: 이전에 남아있던 타이머가 있으면 먼저 확실히 취소(중복 발동 방지)
+  _markerDrag.timer=setTimeout(()=>{ if(_markerDrag.mode==='pending') _markerDrag.mode='move'; }, LONG_PRESS_MS);
+}
+function _markerDragMove(e){
+  if(_markerDrag.mode==='idle') return;
+  const marker=A.tapMarkers.find(m=>m.id===_markerDrag.id);
+  if(!marker){ _markerDrag.mode='idle'; return; }
+  const [x,y]=_markerDragPos(e);
+  if(_markerDrag.mode==='pending'){
+    const dx=x-_markerDrag.startX, dy=y-_markerDrag.startY;
+    if(Math.abs(dx)<6 && Math.abs(dy)<6) return; // ➕ 추가: 살짝 떨리는 정도는 무시
+    clearTimeout(_markerDrag.timer); // ✏️ 변경: 빨리 끌기 시작했으니 "길게 누르기"는 취소하고 크기조절로 전환
+    _markerDrag.mode='resize';
+  }
+  if(_markerDrag.mode==='resize'){
+    if(marker.shape==='arrow'){
+      const curAngle=Math.atan2(y-_markerDrag.centerY, x-_markerDrag.centerX);
+      const curRadius=Math.hypot(x-_markerDrag.centerX, y-_markerDrag.centerY);
+      marker.angle=_markerDrag.startAngle + (curAngle-_markerDrag.startAngleAtGrab); // ✏️ 변경: 절대 각도가 아니라 "처음 잡았을 때 대비 회전한 양"만 더함 → 중심 가까이 잡아도 안 튐
+      marker.width=Math.max(24, Math.min(220, _markerDrag.startW + (curRadius-_markerDrag.startRadius)*1.6));
+      A.markerStyle.angle=marker.angle; A.markerStyle.width=marker.width;
+    } else {
+      const dx=x-_markerDrag.startX, dy=y-_markerDrag.startY;
+      marker.width=Math.max(14, _markerDrag.startW + dx*_markerDrag.signX*2);
+      marker.height=Math.max(14, _markerDrag.startH + dy*_markerDrag.signY*2);
+      A.markerStyle.width=marker.width; A.markerStyle.height=marker.height;
+    }
+    renderMarkerEl(marker);
+  } else if(_markerDrag.mode==='move'){
+    const rect=document.getElementById('cam-wrap').getBoundingClientRect();
+    marker.x=(x-_markerDrag.offsetX-rect.left)/rect.width; // ✏️ 변경: 처음 잡은 지점과의 차이(offset)를 그대로 유지해서 자연스럽게 따라옴(중앙으로 튀지 않음)
+    marker.y=(y-_markerDrag.offsetY-rect.top)/rect.height;
+    renderMarkerEl(marker);
+  }
+  e.preventDefault(); e.stopPropagation();
+}
+function _markerDragEnd(e){
+  clearTimeout(_markerDrag.timer);
+  if(_markerDrag.mode==='resize'||_markerDrag.mode==='move'){
+    e.preventDefault(); e.stopPropagation(); // ✏️ 변경: 실제로 조작이 있었을 때만 막음(조건 없이 막으면 전역 클릭 차단 버그 재발)
+  } else if(_markerDrag.mode==='pending' && _markerDrag.id!=null){
+    A.activeMarkerId=_markerDrag.id; renderAllMarkers(); // ➕ 추가: 움직임 없이 누르고 뗀 건 "이 마커를 선택"으로 처리
+  }
+  _markerDrag.mode='idle'; _markerDrag.id=null;
+}
+document.addEventListener('mousemove',_markerDragMove);
+document.addEventListener('touchmove',_markerDragMove,{passive:false});
+document.addEventListener('mouseup',_markerDragEnd);
+document.addEventListener('touchend',_markerDragEnd);
+function drawTapMarkerOnCanvas(ctx, W, H){
+  // ✏️ 변경: 마커 여러 개를 전부 사진에 합성(forEach), 원=얇은선만, 화살표=angle(회전각) 반영
+  if(!A.tapMarkers.length) return;
+  const scale=W/document.getElementById('cam-wrap').clientWidth; // 화면 px 크기를 사진 해상도 비율로 변환
+  A.tapMarkers.forEach(({x,y,shape,color,width,height,angle,text})=>{
+    const cx=x*W, cy=y*H;
+    const rx=(width/2)*scale, ry=(height/2)*scale;
+    ctx.save();
+    if(shape==='circle'){
+      ctx.strokeStyle=color; ctx.lineWidth=Math.max(2,Math.min(rx,ry)*0.1); ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); // 얇은 빨간선(채우기 없음)
+    }
+    else if(shape==='arrow'){
+      const len=width*scale, headLen=Math.min(18*scale, len*0.5), headW=Math.max(8*scale, height*scale*0.7), lineW=Math.max(2*scale, height*scale*0.16);
+      ctx.translate(cx,cy); ctx.rotate(angle||0);
+      ctx.fillStyle=color;
+      ctx.fillRect(-len/2, -lineW/2, len-headLen, lineW); // 선(길이만 따라 늘어남)
+      ctx.beginPath(); ctx.moveTo(len/2-headLen, -headW/2); ctx.lineTo(len/2, 0); ctx.lineTo(len/2-headLen, headW/2); ctx.closePath(); ctx.fill(); // 화살촉(거의 고정 크기)
+    }
+    else if(shape==='text'){
+      ctx.translate(cx,cy); ctx.scale((width/28), (height/28));
+      ctx.font=`bold ${28*0.6*scale}px 'Noto Sans KR',sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=color;
+      ctx.fillText(text||'',0,0);
+    }
+    ctx.restore();
+  });
+}
+function retake(){ A.compositeDataUrl=null; clearAllMarkers(); startCam(); }
+
+// ════════════════════════
+//  전/중/후 버튼
+// ════════════════════════
+function setStage(val, key) {
+  A.currentStage=val;
+  document.getElementById('f-stage').value=val;
+  ['before','during','after','check'].forEach(k=>{
+    const el=document.getElementById('sb-'+k);
+    if(el) el.className='sb'+(k===key?' s-'+k:'');
+  });
+  // 배너 구분 업데이트
+  document.getElementById('ab-stage').textContent = val ? '촬영 구분: '+val : '';
+  updateFname();
+}
+
+// ════════════════════════
+//  ★ 작업 목록 (자동 생성) ★
+// ════════════════════════
+// ════════════════════════
+//  사진 원본 저장소 (IndexedDB) — localStorage는 용량이 작아 사진(이미지)은 못 담으므로
+//  브라우저 내장 데이터베이스인 IndexedDB에 따로 저장해서 다음날 다시 봐도 남아있게 함
+// ════════════════════════
+let _photoDB=null;
+function openPhotoDB(){
+  if(_photoDB) return Promise.resolve(_photoDB);
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open('fb4_photos',1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore('shots',{keyPath:'id'}); };
+    req.onsuccess=()=>{ _photoDB=req.result; resolve(_photoDB); };
+    req.onerror=()=>reject(req.error);
+  });
+}
+function savePhotoToDB(id, dataUrl){
+  openPhotoDB().then(db=>{
+    db.transaction('shots','readwrite').objectStore('shots').put({id, dataUrl});
+  }).catch(()=>{});
+}
+function getPhotoFromDB(id){
+  return openPhotoDB().then(db=>new Promise((resolve)=>{
+    const req=db.transaction('shots','readonly').objectStore('shots').get(id);
+    req.onsuccess=()=>resolve(req.result?req.result.dataUrl:null);
+    req.onerror=()=>resolve(null);
+  }));
+}
+function makeJobKey(receipt) {
+  // ✏️ 변경: 묶는 기준을 단지명+동+호+공종 → 접수번호로 변경(같은 접수번호=같은 작업)
+  return (receipt||'').trim().toLowerCase();
+}
+function getOrCreateJob(meta) {
+  // 접수번호가 같으면 기존 것 반환, 없으면 새로 생성
+  const key = makeJobKey(meta.receipt);
+  let job = A.jobs.find(j=>j.key===key);
+  if(!job) {
+    job = {
+      id: 'j'+Date.now(),
+      key,
+      title: meta.defect||'미입력', // ✏️ 변경: 카드 제목을 공종→하자내용으로 변경
+      loc:   [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' '),
+      complex: meta.complex||'', dong: meta.dong||'', ho: meta.ho||'',
+      worktype: meta.worktype||'', location: meta.location||'', defect: meta.defect||'', receipt: meta.receipt||'',
+      shots: {},   // { '전':{ time, fileName }, '중':..., '후':... }
+      seq: {},     // { '전':1, '중':1, ... } 같은 구분 재촬영 시 증가
+      createdAt: new Date().toISOString(),
+      lastAt: new Date().toISOString(),
+    };
+    A.jobs.unshift(job);
+  } else {
+    job.title = meta.defect||job.title; // ✏️ 변경: 카드 제목을 공종→하자내용으로 변경
+    job.loc = [meta.complex,meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
+    job.complex=meta.complex||job.complex; job.dong=meta.dong||job.dong; job.ho=meta.ho||job.ho;
+    job.worktype=meta.worktype||job.worktype; job.location=meta.location||job.location;
+    job.defect=meta.defect||job.defect; job.receipt=meta.receipt||job.receipt;
+  }
+  return job;
+}
+
+function setJobFilter(filter){
+  A.jobFilter=filter;
+  document.getElementById('jf-active').classList.toggle('active', filter==='active');
+  document.getElementById('jf-done').classList.toggle('active', filter==='done');
+  renderJobs();
+}
+function renderJobs() {
+  const list = document.getElementById('job-list');
+  // ✏️ 변경: 완료된 작업을 무조건 숨기지 않고, 필터("진행중"/"완료")에 따라 보여줄 목록을 나눔
+  const isDone = job=>STAGES.every(s=>job.shots[s]&&job.shots[s].length);
+  const visibleJobs = A.jobs.filter(job=> A.jobFilter==='done' ? isDone(job) : !isDone(job));
+  document.getElementById('job-count').textContent = visibleJobs.length+'건';
+
+  if(!visibleJobs.length) {
+    list.innerHTML=`<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">${A.jobFilter==='done' ? '완료된 작업이 아직 없습니다' : '촬영 탭에서 사진을 찍으면<br>여기에 자동으로 쌓입니다'}</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = visibleJobs.map(job=>{
+    const hasShots = s=>job.shots[s]&&job.shots[s].length; // ➕ 추가: 배열 형태(여러 장)인지 확인하는 헬퍼
+    const allDone = STAGES.every(s=>hasShots(s));
+    const isActive = A.activeJobId===job.id;
+
+    // 진행 상태 계산
+    const doneCount = STAGES.filter(s=>hasShots(s)).length;
+    const pct = Math.round(doneCount/STAGES.length*100);
+
+    // 전/중/후 각 도트 상태
+    const dots = STAGES.map((s,i)=>{
+      const key = STAGE_KEY[s];
+      const done = hasShots(s);
+      const isNext = !done && STAGES.slice(0,i).every(ps=>hasShots(ps));
+      return {s, key, done, isNext};
+    });
+
+    return `
+    <div class="job-card${allDone?' is-done':''}${isActive?' is-active':''}" id="jc-${job.id}">
+      <div class="job-top">
+        <div class="job-meta">
+          <div class="job-title">${job.title}${allDone?'<span class="done-badge">완료</span>':''}</div>
+          <div class="job-loc">${job.loc||'위치 미입력'}</div>
+          <div class="job-time">${formatTime(job.lastAt)} 마지막 촬영</div>
+        </div>
+        <div class="job-export-btn" onclick="exportJob('${job.id}')" title="사진/확인서 공유">📤</div>
+        <div class="job-del-btn" onclick="deleteJob('${job.id}')">🗑️</div>
+      </div>
+
+      <!-- ★ 진행 상태 시각화 ★ -->
+      <div class="job-progress">
+        <!-- 도트 -->
+        <div class="progress-track">
+          ${dots.map(d=>{
+            const lastShot = d.done ? job.shots[d.s][job.shots[d.s].length-1] : null;
+            const dotClick = d.done ? `viewShots('${job.id}','${d.s}')` : `loadJobWithStage('${job.id}','${d.s}','${d.key}')`;
+            return `
+            <div class="pt-item">
+              <div class="pt-dot${d.done?' done-'+d.key:''}${d.isNext?' active-stage':''}"
+                onclick="${dotClick}">
+                ${d.done?'✓':d.isNext?'▶':d.s}
+              </div>
+              <div class="pt-label${d.done?' done':''}">
+                ${d.s}${d.done?' <span style="font-size:8px;color:var(--text3)">'+job.shots[d.s].length+'장</span>':''}
+              </div>
+            </div>
+          `;}).join('')}
+          ${(()=>{ // ➕ 추가: 완료확인서 도트(전/중/후 다음 4번째 도트, 후가 끝났을 때만 활성)
+            const certDone = job.certs&&job.certs.length;
+            const certNext = !certDone && hasShots('후');
+            const certClick = certDone ? `viewCerts('${job.id}')` : `loadJobForCert('${job.id}')`;
+            return `
+            <div class="pt-item">
+              <div class="pt-dot${certDone?' done-cert':''}${certNext?' active-stage':''}"
+                onclick="${certClick}">
+                ${certDone?'✓':certNext?'▶':'📄'}
+              </div>
+              <div class="pt-label${certDone?' done':''}">
+                확인서${certDone?' <span style="font-size:8px;color:var(--text3)">'+job.certs.length+'건</span>':''}
+              </div>
+            </div>`;
+          })()}
+        </div>
+      </div>
+
+      <!-- 액션 버튼 행 -->
+      <div class="job-action-row">
+        ${dots.map(d=>{
+          const label = d.done ? d.s+'✓' : d.s;
+          const cls = d.isNext ? 'jab next-up' : d.done ? 'jab already' : 'jab';
+          return `<button class="${cls}" onclick="loadJobWithStage('${job.id}','${d.s}','${d.key}')">
+            ${d.isNext?'▶ '+label:label}
+          </button>`;
+        }).join('')}
+        ${(()=>{ // ✏️ 변경: 도트(보기)와 중복되지 않게, 버튼은 전/중/후 버튼처럼 항상 "추가로 만들러 가기" 역할로 통일
+          const certDone = job.certs&&job.certs.length;
+          const certNext = !certDone && hasShots('후');
+          const certCls = certNext ? 'jab next-up' : certDone ? 'jab already' : 'jab';
+          const certLabel = certDone ? '확인서✓' : '확인서';
+          return `<button class="${certCls}" onclick="loadJobForCert('${job.id}')">${certNext?'▶ '+certLabel:certLabel}</button>`;
+        })()}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 작업 불러오기 (특정 구분)
+function loadJobWithStage(id, stage, stageKey) {
+  const job = A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  A.activeJobId = id;
+
+  document.getElementById('f-receipt').value  = job.receipt||'';
+  document.getElementById('f-complex').value  = job.complex||'';
+  document.getElementById('f-dong').value      = job.dong||'';
+  document.getElementById('f-ho').value        = job.ho||'';
+  document.getElementById('f-worktype').value  = job.worktype==='미입력'?'':job.worktype;
+  document.getElementById('f-location').value  = job.location||'';
+  document.getElementById('f-defect').value    = job.defect||'';
+  setStage(stage, stageKey);
+  updateFname();
+
+  // 배너 표시
+  const banner = document.getElementById('active-banner');
+  document.getElementById('ab-name').textContent = job.title + (job.loc?' / '+job.loc:'');
+  document.getElementById('ab-stage').textContent = '촬영 구분: '+stage;
+  banner.classList.add('show');
+
+  goTab('shoot', document.querySelectorAll('.tab')[1]);
+  showToast('📋 '+job.title+' — '+stage);
+}
+
+async function exportJob(jobId){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  const allShots=[];
+  STAGES.forEach(s=>{ (job.shots[s]||[]).forEach(sh=>allShots.push(sh)); });
+  (job.certs||[]).forEach(c=>allShots.push(c));
+  const withId=allShots.filter(s=>s.id);
+  if(!withId.length){ showToast('내보낼 사진/확인서가 없습니다','warn'); return; }
+
+  showToast('📤 내보낼 사진 준비 중...');
+  const files=[];
+  for(const s of withId){
+    const dataUrl=await getPhotoFromDB(s.id);
+    if(!dataUrl) continue;
+    try{
+      const res=await fetch(dataUrl);
+      const blob=await res.blob();
+      files.push(new File([blob], s.fileName||'photo.jpg', {type:'image/jpeg'}));
+    }catch(e){}
+  }
+  if(!files.length){ showToast('이미지를 불러오지 못했습니다','err'); return; }
+
+  if(navigator.canShare && navigator.canShare({files})){
+    try{
+      await navigator.share({files, title: job.title, text: job.title+(job.loc?' / '+job.loc:'')});
+    }catch(e){ /* 사용자가 공유를 취소한 경우 등 — 별도 처리 불필요 */ }
+  } else {
+    showToast('이 브라우저는 사진 공유를 지원하지 않습니다','err');
+  }
+}
+let _pendingDeleteId=null;
+function deleteJob(id){
+  const job=A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  _pendingDeleteId=id;
+  document.getElementById('delete-job-name').textContent=job.title+(job.loc?' / '+job.loc:'');
+  document.getElementById('delete-modal').classList.add('show');
+}
+function cancelDeleteJob(){
+  _pendingDeleteId=null;
+  document.getElementById('delete-modal').classList.remove('show');
+}
+function confirmDeleteJob(){
+  if(!_pendingDeleteId) return;
+  A.jobs=A.jobs.filter(j=>j.id!==_pendingDeleteId);
+  if(A.activeJobId===_pendingDeleteId) A.activeJobId=null;
+  _pendingDeleteId=null;
+  document.getElementById('delete-modal').classList.remove('show');
+  saveAll();
+  renderJobs();
+  showToast('🗑️ 삭제됨');
+}
+// 작업 불러오기 (완료확인서 작성용 — 단계 선택 없이 정보만 채움)
+function loadJobForCert(id) {
+  const job = A.jobs.find(j=>j.id===id);
+  if(!job) return;
+  A.activeJobId = id;
+
+  document.getElementById('f-receipt').value  = job.receipt||'';
+  document.getElementById('f-complex').value  = job.complex||'';
+  document.getElementById('f-dong').value      = job.dong||'';
+  document.getElementById('f-ho').value        = job.ho||'';
+  document.getElementById('f-worktype').value  = job.worktype==='미입력'?'':job.worktype;
+  document.getElementById('f-location').value  = job.location||'';
+  document.getElementById('f-defect').value    = job.defect||'';
+  updateFname();
+
+  const banner = document.getElementById('active-banner');
+  document.getElementById('ab-name').textContent = job.title + (job.loc?' / '+job.loc:'');
+  document.getElementById('ab-stage').textContent = '완료확인서 작성 준비';
+  banner.classList.add('show');
+
+  goTab('shoot', document.querySelectorAll('.tab')[1]);
+  showToast('📄 '+job.title+' — 완료확인서(📄) 버튼을 눌러주세요');
+}
+function clearActive() {
+  A.activeJobId=null;
+  document.getElementById('active-banner').classList.remove('show');
+}
+
+// ════════════════════════
+//  단계별 촬영 사진 뷰어 (좌우로 넘겨보기)
+// ════════════════════════
+const SV={shots:[],idx:0};
+function viewShots(jobId, stage){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job||!job.shots[stage]||!job.shots[stage].length) return;
+  SV.shots=job.shots[stage];
+  SV.idx=SV.shots.length-1; // 가장 최근 사진부터 보여줌
+  document.getElementById('shot-viewer').classList.add('show');
+  renderShotViewer();
+}
+function viewCerts(jobId){
+  const job=A.jobs.find(j=>j.id===jobId);
+  if(!job||!job.certs||!job.certs.length){ showToast('완료확인서가 아직 없습니다 — 촬영 화면에서 만들어보세요','warn'); return; }
+  SV.shots=job.certs;
+  SV.idx=SV.shots.length-1;
+  document.getElementById('shot-viewer').classList.add('show');
+  renderShotViewer();
+}
+function closeShotViewer(){ document.getElementById('shot-viewer').classList.remove('show'); }
+function shotViewerMove(dir){
+  SV.idx=Math.max(0,Math.min(SV.shots.length-1,SV.idx+dir));
+  renderShotViewer();
+}
+function renderShotViewer(){
+  const shot=SV.shots[SV.idx];
+  document.getElementById('sv-counter').textContent=(SV.idx+1)+'/'+SV.shots.length;
+  document.getElementById('sv-stage-time').textContent=shot.time+' · '+shot.fileName;
+  const img=document.getElementById('sv-img');
+  img.src='';
+  if(shot.id){
+    getPhotoFromDB(shot.id).then(url=>{ if(url) img.src=url; });
+  }
+}
+(function(){
+  // 스와이프(터치 좌우 넘기기) 지원
+  let sx=0;
+  const wrap=document.getElementById('sv-img-wrap');
+  wrap.addEventListener('touchstart',e=>{ sx=e.touches[0].clientX; });
+  wrap.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>40) shotViewerMove(dx<0?1:-1);
+  });
+})();
+
+function formatTime(iso) {
+  if(!iso) return '';
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  const mo = d.getMonth()+1, da = d.getDate();
+  const today = new Date();
+  if(d.toDateString()===today.toDateString()) return h+':'+m;
+  return mo+'/'+da+' '+h+':'+m;
+}
+
+// ════════════════════════
+//  업로드 → 자동으로 작업 목록 업데이트
+// ════════════════════════
+async function uploadDrive() {
+  const url    = document.getElementById('s-url').value.trim();
+  const folder = document.getElementById('s-folder').value.trim();
+  if(!url||!folder) {
+    showToast('⚙️ 설정에서 드라이브 연동 먼저','warn');
+    goTab('settings',document.querySelectorAll('.tab')[3]); return;
+  }
+  if(!A.compositeDataUrl){ showToast('먼저 촬영하세요','warn'); return; }
+
+  const btn=document.getElementById('upload-btn');
+  btn.disabled=true; btn.innerHTML='<span>⏳</span> 업로드 중...';
+  setBadge('uploading','업로드 중...');
+
+  const meta = getFieldMeta();
+  const stage    = A.currentStage;
+  const fileName = buildFname();
+
+  try {
+    const res  = await fetch(url,{
+      method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'}, // ✏️ 변경: application/json→text/plain, CORS 사전검사(OPTIONS)가 Apps Script에서 막혀 요청이 항상 실패하던 문제 해결
+      body:JSON.stringify({image:A.compositeDataUrl,fileName,folderId:folder,folderName:buildJobFolderName(meta)}) // ✏️ 변경: 같은 작업끼리 모일 하위 폴더명 같이 전송
+    });
+    const json = await res.json();
+    if(json.status==='ok') {
+      // ❌ 삭제됨: 작업목록 갱신은 이제 shoot() 촬영 시점에서 처리하므로 여기서는 호출하지 않음
+      setBadge('ok','드라이브 연결됨');
+      showToast('✅ 저장 완료');
+      handleNextStage(stage);
+      retake();
+    } else throw new Error();
+  } catch(e) {
+    // ❌ 삭제됨: 작업목록 갱신은 이제 shoot() 촬영 시점에서 처리하므로 여기서는 호출하지 않음
+    setBadge('fail','연결 실패');
+    showToast('📴 로컬 저장됨','warn');
+    handleNextStage(stage);
+    retake();
+  } finally {
+    btn.disabled=false; btn.innerHTML='<span>☁️</span> 구글 드라이브에 저장';
+    saveAll();
+  }
+}
+
+async function uploadCertToDrive(dataUrl, fileName, meta){
+  const url=document.getElementById('s-url').value.trim();
+  const folder=document.getElementById('s-folder').value.trim();
+  if(!url||!folder) return; // 드라이브 미연결이면 조용히 스킵(확인서는 이미 갤러리/IndexedDB에 저장됐으므로)
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({image:dataUrl,fileName,folderId:folder,folderName:buildJobFolderName(meta||{})})}); // ✏️ 변경: 같은 작업끼리 모일 하위 폴더명 같이 전송
+    const json=await res.json();
+    if(json.status==='ok') showToast('☁️ 확인서 드라이브 저장 완료');
+    else showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn');
+  }catch(e){ showToast('확인서 드라이브 저장 실패(갤러리엔 저장됨)','warn'); }
+}
+function updateJobAfterSave(meta, stage, fileName, shotId) {
+  const job = getOrCreateJob(meta);
+  const now  = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if(stage) {
+    job.seq[stage] = (job.seq[stage]||0)+1;
+    if(!Array.isArray(job.shots[stage])) job.shots[stage]=[]; // ✏️ 변경: 단계당 1장만 저장하던 것을 여러 장 배열로 변경
+    job.shots[stage].push({ time: timeStr, fileName, id: shotId||null }); // ➕ 추가: id로 IndexedDB에 저장된 실제 사진 이미지를 나중에 불러옴
+  }
+  job.lastAt = now.toISOString();
+  A.activeJobId = job.id;
+  renderJobs();
+  saveAll(); // ➕ 추가: 촬영 시점에 바로 저장(이전엔 uploadDrive 쪽 finally에서만 저장됐음)
+}
+
+function handleNextStage(stage) {
+  if(!document.getElementById('t-next').classList.contains('on')) return;
+  const idx = STAGES.indexOf(stage);
+  if(idx>=0 && idx<STAGES.length-1) {
+    const next = STAGES[idx+1];
+    setStage(next, STAGE_KEY[next]);
+    showToast('다음: '+next+' 촬영 준비');
+  }
+}
+
+// ════════════════════════
+//  파일명
+// ════════════════════════
+function getFieldMeta() {
+  const v=id=>document.getElementById(id).value.trim();
+  return {
+    receipt:v('f-receipt'), complex:v('f-complex'), dong:v('f-dong'), ho:v('f-ho'),
+    worktype:v('f-worktype'), location:v('f-location'), defect:v('f-defect'), quantity:v('f-quantity'),
+  };
+}
+function buildJobFolderName(meta){ // ➕ 추가: 드라이브 안에서 같은 작업(접수번호)끼리 모일 하위 폴더명 생성
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const receipt=cl(meta.receipt);
+  return [complex,dong,ho,receipt].filter(Boolean).join('_')||'미분류';
+}
+function nextSeqFor(meta, stage) {
+  if(!stage) return 1;
+  const key = makeJobKey(meta.receipt);
+  const job = A.jobs.find(j=>j.key===key);
+  return (job && job.seq[stage] ? job.seq[stage] : 0) + 1;
+}
+function buildFname() {
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const meta = getFieldMeta();
+  const receipt=cl(meta.receipt);
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const worktype=cl(meta.worktype);
+  const location=cl(meta.location);
+  const defect=cl(meta.defect);
+  const stage=A.currentStage;
+  const base=[receipt,complex,dong,ho,worktype,location,defect].filter(Boolean).join('_');
+  const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
+  return [base,stagePart].filter(Boolean).join('_')+'.jpg';
+}
+// ➕ 추가: 갤러리 저장용 파일명 — 단지명을 맨 앞에 둬서 폰 다운로드 폴더에서 단지별로 묶여 찾기 쉽게 함 (드라이브용 buildFname()은 그대로 유지)
+function buildGalleryFname() {
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const meta = getFieldMeta();
+  const receipt=cl(meta.receipt);
+  const complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null;
+  const ho=meta.ho?cl(meta.ho)+'호':null;
+  const worktype=cl(meta.worktype);
+  const location=cl(meta.location);
+  const defect=cl(meta.defect);
+  const stage=A.currentStage;
+  const base=[complex,receipt,dong,ho,worktype,location,defect].filter(Boolean).join('_');
+  const stagePart = stage ? stage+'('+nextSeqFor(meta,stage)+')' : '';
+  return [base,stagePart].filter(Boolean).join('_')+'.jpg';
+}
+// ➕ 추가: 촬영한 사진을 폰 다운로드 폴더(갤러리에도 보통 표시됨)에 저장 — 드라이브 업로드 성공/실패와 무관하게 항상 실행
+function saveToGallery(){
+  if(!A.compositeDataUrl) return;
+  const a=document.createElement('a');
+  a.href=A.compositeDataUrl;
+  a.download=buildGalleryFname();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+// ════════════════════════
+//  완료확인서 (보드판처럼 양식에 맞춰 이미지로 생성)
+// ════════════════════════
+function nextCertSeqFor(meta){
+  const key=makeJobKey(meta.receipt);
+  const job=A.jobs.find(j=>j.key===key);
+  return (job&&job.certSeq?job.certSeq:0)+1;
+}
+function buildCertFname(meta, seq){
+  const cl=s=>(s||'').trim().replace(/\s+/g,'_')||null;
+  const receipt=cl(meta.receipt), complex=cl(meta.complex);
+  const dong=meta.dong?cl(meta.dong)+'동':null, ho=meta.ho?cl(meta.ho)+'호':null;
+  const base=[receipt,complex,dong,ho].filter(Boolean).join('_');
+  const seqStr=String(seq).padStart(3,'0');
+  return [base,'완료확인서',seqStr].filter(Boolean).join('_')+'.jpg';
+}
+function wrapCertText(ctx,text,x,y,maxWidth,lineHeight,center){
+  if(!text) return;
+  const chars=text.split('');
+  let line='';
+  const lines=[];
+  chars.forEach(ch=>{
+    const test=line+ch;
+    if(ctx.measureText(test).width>maxWidth && line){ lines.push(line); line=ch; }
+    else line=test;
+  });
+  if(line) lines.push(line);
+  if(center){ ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, x+maxWidth/2, y+i*lineHeight)); ctx.textAlign='left'; } // ✏️ 변경: 가운데 정렬 지원
+  else lines.forEach((l,i)=>ctx.fillText(l, x, y+i*lineHeight));
+}
+function drawVerticalStamp(ctx,name,cx,cy,w,h){
+  // ✏️ 변경: 사각 테두리 → 세로로 긴 타원으로 변경, "(인)" 글자 위에 겹쳐서 도장처럼 보이게 함
+  if(!name) return;
+  ctx.save();
+  ctx.strokeStyle='#c0392b'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, w/2, h/2, 0, 0, Math.PI*2); // ✏️ 변경: strokeRect → ellipse(타원)
+  ctx.stroke();
+  ctx.fillStyle='#c0392b';
+  ctx.font="bold 13px 'Noto Sans KR',sans-serif";
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const chars=name.split('').slice(0,4);
+  const lineH=h/(chars.length+0.6);
+  const startY=cy-(chars.length-1)*lineH/2;
+  chars.forEach((ch,i)=>ctx.fillText(ch, cx, startY+i*lineH));
+  ctx.restore();
+}
+function loadImg(src){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=reject;
+    img.src=src;
+  });
+}
+async function drawCertificate(canvas, meta, sig){
+  const W=1000, H=1414;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='middle';
+
+  const margin=60, labelW=160, tableW=W-margin*2, valueW=tableW-labelW, x0=margin;
+  let y=150; // ✏️ 변경: 제목을 120→150으로 내려서 전체 줄을 다시 +30 내림(이후 모든 줄이 이 값 기준 상대 계산이라 한 줄만 바꾸면 전체가 같이 내려감)
+
+  ctx.fillStyle='#000';
+  ctx.font="bold 38px 'Noto Sans KR',sans-serif";
+  ctx.textAlign='center';
+  ctx.fillText('공 사 완 료 확 인 서', W/2, y);
+  y+=60;
+
+  const projectname=document.getElementById('s-projectname').value||'';
+  const contractor=document.getElementById('s-contractor').value||'';
+  const worker=document.getElementById('s-worker').value||'';
+  const manager=document.getElementById('s-manager').value||'';
+  const dongHo=[meta.dong&&meta.dong+'동',meta.ho&&meta.ho+'호'].filter(Boolean).join(' ');
+  const today=new Date();
+  const dateStr=today.getFullYear()+'년 '+(today.getMonth()+1)+'월 '+today.getDate()+'일';
+  const repairContent=[meta.location,meta.defect,meta.quantity].filter(Boolean).join(' / '); // ✏️ 변경: 공종-위치-하자내용 → 위치-하자내용-물량
+
+  function row(label, value, rowH, center){
+    ctx.fillStyle='#eee';
+    ctx.fillRect(x0,y,labelW,rowH);
+    ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
+    ctx.strokeRect(x0,y,labelW,rowH);
+    ctx.strokeRect(x0+labelW,y,valueW,rowH);
+    ctx.fillStyle='#000';
+    ctx.font="bold 18px 'Noto Sans KR',sans-serif";
+    ctx.textAlign='center';
+    ctx.fillText(label, x0+labelW/2, y+(rowH>60?28:rowH/2));
+    ctx.font="18px 'Noto Sans KR',sans-serif";
+    ctx.textAlign='left';
+    if(rowH>60){ wrapCertText(ctx, value, x0+labelW+16, y+34, valueW-32, 26, center); } // ✏️ 변경: center 옵션 추가
+    else { ctx.fillText(value, x0+labelW+16, y+rowH/2); }
+    y+=rowH;
+  }
+
+  row('공 사 명', projectname, 60); // ✏️ 변경: 행 높이 70→60
+  row('보수 업체', contractor, 60); // ✏️ 변경: 행 높이 70→60
+  row('접 수 번 호', meta.receipt||'', 60); // ✏️ 변경: 행 높이 70→60
+  row('단지명 (동,호)', (meta.complex||'')+' '+dongHo, 60); // ✏️ 변경: 행 높이 70→60
+  row('접 수 내 용', meta.defect||'', 130); // ✏️ 변경: 행 높이 100→130
+  row('보 수 내 용', repairContent, 130); // ✏️ 변경: 가운데 정렬 취소, 기존(왼쪽 정렬)으로 복구
+  row('보수완료일', dateStr, 60); // ✏️ 변경: 행 높이 70→60
+
+  // 작업자 / 현장대리인 (한 줄에 2칸씩)
+  const halfLabelW=labelW, halfW=tableW/2, halfRowH=60; // ✏️ 변경: 위 보수완료일 라벨과 너비를 맞춰 세로선이 일치하도록, 행 높이도 70→60로 통일
+  ctx.fillStyle='#eee';
+  ctx.fillRect(x0,y,halfLabelW,halfRowH);
+  ctx.fillRect(x0+halfW,y,halfLabelW,halfRowH);
+  ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
+  ctx.strokeRect(x0,y,halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfLabelW,y,halfW-halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfW,y,halfLabelW,halfRowH);
+  ctx.strokeRect(x0+halfW+halfLabelW,y,tableW-halfW-halfLabelW,halfRowH);
+  ctx.fillStyle='#000'; ctx.font="bold 18px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
+  ctx.fillText('작 업 자', x0+halfLabelW/2, y+halfRowH/2);
+  ctx.fillText('현장대리인', x0+halfW+halfLabelW/2, y+halfRowH/2);
+  ctx.font="18px 'Noto Sans KR',sans-serif";
+  const workerCenterX=x0+halfLabelW+(halfW-halfLabelW)/2; // ✏️ 변경: 값칸 정가운데 x좌표 계산
+  const managerCenterX=x0+halfW+halfLabelW+(tableW-halfW-halfLabelW)/2; // ✏️ 변경: 값칸 정가운데 x좌표 계산
+  ctx.textAlign='center';
+  ctx.fillText(worker, workerCenterX, y+halfRowH/2); // ✏️ 변경: 왼쪽정렬→가운데정렬
+  const managerText=manager+(manager?' (인)':''); // ✏️ 변경: "(인)" 글자 다시 표시
+  ctx.fillText(managerText, managerCenterX, y+halfRowH/2); // ✏️ 변경: 왼쪽정렬→가운데정렬
+  ctx.textAlign='left';
+  if(manager){
+    const totalW=ctx.measureText(managerText).width; // ➕ 추가: 가운데정렬된 글자의 왼쪽 끝 x좌표를 구하기 위해 전체 폭 측정
+    const leftEdge=managerCenterX-totalW/2;
+    const prefixW=ctx.measureText(manager+' ').width; // ➕ 추가: 이름 길이만큼의 실제 폭을 측정해 "(인)" 시작 x좌표 계산
+    const sealW=ctx.measureText('(인)').width;
+    drawVerticalStamp(ctx, manager, leftEdge+prefixW+sealW/2, y+halfRowH/2, 28, 44); // ✏️ 변경: 가운데정렬된 위치 기준으로 "(인)" 글자 중앙 계산
+  }
+  y+=halfRowH+30; // ✏️ 변경: 행 높이가 70으로 늘어난 만큼 다음 줄까지의 간격도 유지(기존 50행+30여백=80과 동일한 비율)
+  y+=30; // ➕ 추가: 확인문구를 830→860으로 내림(이후 날짜/확인자 줄도 같이 +30 이동)
+  y+=20; // ➕ 추가: 확인문구를 890→910으로 추가로 내림(이후 날짜/확인자 줄도 같이 +20 이동)
+
+  ctx.font="17px 'Noto Sans KR',sans-serif"; ctx.textAlign='center';
+  ctx.fillText('상기 접수내용 및 보수내용대로 보수공사를 완료하였음을 확인합니다.', W/2, y);
+  y+=60;
+  ctx.font="20px 'Noto Sans KR',sans-serif";
+  ctx.fillText(dateStr, W/2, y);
+  y+=70;
+
+  ctx.font="18px 'Noto Sans KR',sans-serif"; ctx.textAlign='left';
+  const confirmLabelX=x0+590, confirmNameX=x0+760; // ✏️ 변경: 간격을 절반 정도로 더 줄임(라벨↔이름, 이름↔(인) 둘 다 좁힘)
+  const confirmSealRightX=x0+tableW; // ✏️ 변경: "(인)" 글자를 고정 x좌표가 아니라 표 우측 끝선(x0+tableW)에 오른쪽 정렬로 맞춤
+  const tenantY=y, officeY=y+80; // ✏️ 변경: 확인자(관리소) 줄을 y=1070으로 올림(tenantY=990 기준 간격 80)
+  ctx.fillText('확인자(입주자)  :', confirmLabelX, tenantY);
+  if(sig&&sig.tenantName) ctx.fillText(sig.tenantName, confirmNameX, tenantY);
+  ctx.textAlign='right'; ctx.fillText('(인)', confirmSealRightX, tenantY); ctx.textAlign='left'; // ✏️ 변경: "(인)" 우측 끝이 표 끝선과 정확히 맞도록 right 정렬
+  if(sig&&sig.tenantSigUrl){ const img=await loadImg(sig.tenantSigUrl); ctx.drawImage(img, confirmSealRightX-65, tenantY-25, 80,50); } // ✏️ 변경: 서명 이미지도 같은 끝선 기준으로 위치 조정
+
+  ctx.fillText('확인자(관리소)  :', confirmLabelX, officeY);
+  if(sig&&sig.officeName) ctx.fillText(sig.officeName, confirmNameX, officeY);
+  ctx.textAlign='right'; ctx.fillText('(인)', confirmSealRightX, officeY); ctx.textAlign='left'; // ✏️ 변경: "(인)" 우측 끝이 표 끝선과 정확히 맞도록 right 정렬
+  if(sig&&sig.officeSigUrl){ const img=await loadImg(sig.officeSigUrl); ctx.drawImage(img, confirmSealRightX-65, officeY-25, 80,50); } // ✏️ 변경: 서명 이미지도 같은 끝선 기준으로 위치 조정
+}
+let _pendingCert=null;
+async function generateCertificate(){
+  // ✏️ 변경: 바로 저장하지 않고 먼저 미리보기 확인창을 띄움(촬영 확인창과 같은 흐름)
+  const meta=getFieldMeta();
+  if(!meta.receipt){ showToast('접수번호를 입력해주세요','warn'); return; }
+  const seq=nextCertSeqFor(meta);
+  const fname=buildCertFname(meta, seq);
+  const canvas=document.createElement('canvas');
+  await drawCertificate(canvas, meta, null);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+
+  _pendingCert={meta, seq, fname, dataUrl, sig:{}};
+  document.getElementById('cert-preview-img').src=dataUrl;
+  document.getElementById('cert-fname-val').textContent=fname;
+  document.getElementById('cert-modal').classList.add('show');
+}
+function cancelCertModal(){
+  _pendingCert=null;
+  document.getElementById('cert-modal').classList.remove('show');
+}
+function confirmCertSave(){
+  if(!_pendingCert) return;
+  const {meta, seq, fname, dataUrl}=_pendingCert;
+
+  // 폰 갤러리에 저장
+  const a=document.createElement('a');
+  a.href=dataUrl; a.download=fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+  // IndexedDB + 작업목록에 기록
+  const certId='cert_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  savePhotoToDB(certId, dataUrl);
+  const job=getOrCreateJob(meta);
+  job.certSeq=seq;
+  if(!Array.isArray(job.certs)) job.certs=[];
+  const now=new Date();
+  const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  job.certs.push({time:timeStr, fileName:fname, id:certId});
+  job.lastAt=now.toISOString();
+  saveAll();
+  renderJobs();
+
+  uploadCertToDrive(dataUrl, fname, meta); // ✏️ 변경: 토글 검사 없이 항상 드라이브로도 업로드
+
+  _pendingCert=null;
+  document.getElementById('cert-modal').classList.remove('show');
+  showToast('📄 완료확인서 저장됨');
+}
+
+// ════════════════════════
+//  서명 패드 (입주자/관리소 — 둘 다 독립적으로 동작)
+// ════════════════════════
+let _sigRole=null;
+function openSigPad(role){
+  if(!_pendingCert) return;
+  _sigRole=role;
+  document.getElementById('sig-title').textContent = role==='tenant' ? '입주자 서명' : '관리소 서명';
+  const saved = role==='tenant' ? _pendingCert.sig.tenantName : _pendingCert.sig.officeName;
+  document.getElementById('sig-name').value = saved||'';
+  document.getElementById('sig-modal').classList.add('show');
+  setupSigCanvas();
+}
+function setupSigCanvas(){
+  const canvas=document.getElementById('sig-canvas');
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth; canvas.height=wrap.clientHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.strokeStyle='#000';
+  let drawing=false, lastX=0, lastY=0;
+  const pos=e=>{
+    const r=canvas.getBoundingClientRect();
+    const p=e.touches?e.touches[0]:e;
+    return [p.clientX-r.left, p.clientY-r.top];
+  };
+  const start=e=>{ drawing=true; [lastX,lastY]=pos(e); e.preventDefault(); };
+  const move=e=>{
+    if(!drawing) return;
+    const [x,y]=pos(e);
+    ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(x,y); ctx.stroke();
+    [lastX,lastY]=[x,y];
+    e.preventDefault();
+  };
+  const end=()=>{ drawing=false; };
+  canvas.onmousedown=start; canvas.onmousemove=move; canvas.onmouseup=end; canvas.onmouseleave=end;
+  canvas.ontouchstart=start; canvas.ontouchmove=move; canvas.ontouchend=end;
+}
+function voiceForSigName(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-signame');
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 이름을 말씀하세요');
+  rec.onresult=(e)=>{ document.getElementById('sig-name').value=e.results[0][0].transcript.trim(); };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
+}
+function clearSigPad(){ setupSigCanvas(); }
+function cancelSigPad(){ document.getElementById('sig-modal').classList.remove('show'); }
+async function completeSigPad(){
+  const name=document.getElementById('sig-name').value.trim();
+  if(!name){ showToast('이름을 입력해주세요','warn'); return; }
+  const canvas=document.getElementById('sig-canvas');
+  const sigDataUrl=canvas.toDataURL('image/png');
+  document.getElementById('sig-modal').classList.remove('show');
+  await applySignature(_sigRole, name, sigDataUrl);
+  showToast('✍️ 서명 반영됨');
+}
+async function applySignature(role, name, sigDataUrl){
+  if(!_pendingCert) return;
+  if(role==='tenant'){ _pendingCert.sig.tenantName=name; _pendingCert.sig.tenantSigUrl=sigDataUrl; }
+  else { _pendingCert.sig.officeName=name; _pendingCert.sig.officeSigUrl=sigDataUrl; }
+  const canvas=document.createElement('canvas');
+  await drawCertificate(canvas, _pendingCert.meta, _pendingCert.sig);
+  _pendingCert.dataUrl=canvas.toDataURL('image/jpeg',0.92);
+  document.getElementById('cert-preview-img').src=_pendingCert.dataUrl;
+}
+function voiceForFormula(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-formula');
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 산출식을 말씀하세요 (예: "2 곱하기 2")');
+  rec.onresult=(e)=>{
+    let text=e.results[0][0].transcript.trim();
+    text=text.replace(/곱하기/g,'*').replace(/나누기/g,'/').replace(/더하기/g,'+').replace(/빼기/g,'-').replace(/\s+/g,'');
+    const el=document.getElementById('f-formula');
+    el.value=text;
+    calcFormula(el);
+  };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
+}
+function calcFormula(el){
+  // ➕ 추가: 산출식("(2*2)*2.3-(1*1)" 등)을 계산해서 물량 칸에 결과를 자동으로 채움
+  const expr=el.value.trim();
+  if(!expr){ document.getElementById('f-quantity').value=''; updateFname(); return; } // ✏️ 변경: 산출식 지우면 물량도 같이 비움
+  if(!/^[0-9+\-*/(). ]+$/.test(expr)) return; // 숫자/사칙연산/괄호 외 글자가 있으면 계산 안 함(안전장치)
+  try{
+    const result=Function('"use strict";return ('+expr+')')();
+    if(typeof result==='number' && isFinite(result)){
+      document.getElementById('f-quantity').value=String(Math.round(result*100)/100);
+      updateFname();
+    }
+  }catch(e){}
+}
+function updateFname(){ document.getElementById('fname-val').textContent=buildFname(); renderLiveBoard(); }
+function formatReceipt(el){
+  // ✏️ 변경: 한글 등 숫자가 아닌 글자가 섞여있으면(예외 — "선조치"/"관리소요청" 등) 자동 대시 포맷을 건너뛰고 그대로 둠
+  if(/[^0-9-]/.test(el.value)){ updateFname(); return; } // ✏️ 변경: 자동 삽입된 대시(-)는 예외 판단에서 빼야 함(안 그러면 포맷 적용 후 다음 입력부터 예외모드로 오작동)
+  const digits=el.value.replace(/\D/g,'').slice(0,13);
+  const part1=digits.slice(0,6), part2=digits.slice(6,8), part3=digits.slice(8,13);
+  let out=part1;
+  if(digits.length>6) out+='-'+part2;
+  if(digits.length>8) out+='-'+part3;
+  el.value=out;
+  updateFname();
+}
+
+// ════════════════════════
+//  라이브 보드판 (촬영 전 미리보기)
+// ════════════════════════
+function renderLiveBoard(){
+  const v=id=>document.getElementById(id).value;
+  const complex=v('f-complex');
+  const dongHo=[v('f-dong')&&v('f-dong')+'동',v('f-ho')&&v('f-ho')+'호'].filter(Boolean).join(' ');
+  const location=v('f-location');
+  const defect=v('f-defect');
+  const quantity=v('f-quantity');
+  const formula=v('f-formula');
+  const stage=A.currentStage;
+
+  document.getElementById('lbv-complex').textContent=complex;
+  document.getElementById('lbv-dongho').textContent=dongHo;
+  document.getElementById('lbv-location').textContent=location;
+  document.getElementById('lbv-defect').textContent=defect;
+  document.getElementById('lbv-quantity').textContent=formula?formula+'='+quantity:quantity; // ✏️ 변경: 산출식이 있으면 "산출식=물량" 형태로 표시
+  const stages=['전','중','후','점검'];
+  document.getElementById('lbv-stage').innerHTML=stages.map(s=>`<span>${stage===s?'['+s+']':'[ ]'}</span>`).join('');
+  syncLiveBoardSize();
+}
+function syncLiveBoardSize(){
+  const vid=document.getElementById('live-video');
+  const h=vid.clientHeight;
+  if(!h) return;
+  // 사진(캔버스)에 그리는 표와 똑같은 비율(H*0.024)로 줄 높이를 계산해서 라이브 화면도 동일하게 맞춤
+  const rowH=h*0.06075, fs=rowH*0.42; // ✏️ 변경: 보드판 높이 10% 축소(0.0675→0.06075), 캔버스 쪽과 동일 비율 유지
+  document.querySelectorAll('#live-board .lb-row').forEach(r=>{ r.style.height=rowH+'px'; });
+  document.querySelectorAll('#live-board .lb-label, #live-board .lb-val').forEach(el=>{ el.style.fontSize=fs+'px'; });
+}
+
+// ════════════════════════
+//  음성 인식 (항목 선택 후 그 항목만 말하기)
+// ════════════════════════
+const FIELD_LABELS={receipt:'접수번호',dongho:'동/호',defect:'하자내용',quantity:'물량'};
+function voiceFor(field){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ showToast('Chrome 브라우저 권장','err'); return; }
+  if(A.listening) return;
+  const rec=new SR();
+  rec.lang='ko-KR'; rec.interimResults=false;
+  const btn=document.getElementById('mic-'+field);
+  A.listening=true;
+  if(btn) btn.classList.add('listening');
+  showToast('🎤 '+FIELD_LABELS[field]+' 말씀하세요');
+  rec.onresult=(e)=>{ applyVoiceField(field, e.results[0][0].transcript.trim()); };
+  rec.onerror=()=>{ showToast('마이크 오류','err'); };
+  rec.onend=()=>{ A.listening=false; if(btn) btn.classList.remove('listening'); };
+  rec.start();
+}
+function koreanNumToDigit(text){
+  // ➕ 추가: 물량 마이크용 — "한개/두개" 같은 한글 숫자를 아라비아 숫자로 강제 변환
+  const map=[['열',10],['아홉',9],['여덜',8],['여덟',8],['일곱',7],['여섯',6],['다섯',5],['네',4],['세',3],['두',2],['한',1]];
+  let result=text;
+  map.forEach(([word,num])=>{ result=result.replace(new RegExp(word,'g'), num); });
+  return result;
+}
+function applyVoiceField(field, text){
+  if(field==='receipt'){
+    // ✏️ 변경: 한글이 섞인 예외 텍스트("선조치" 등)는 그대로 넣고, 숫자만 말했을 때만 6-2-5 자동 포맷 적용
+    const el=document.getElementById('f-receipt');
+    if(/[^0-9]/.test(text)){ el.value=text.replace(/\s+/g,''); updateFname(); } // ✏️ 변경: 띄어쓰기 제거하고 붙여쓰기로 저장
+    else { el.value=text.replace(/\D/g,'').slice(0,13); formatReceipt(el); }
+  } else if(field==='dongho'){
+    const m=text.match(/(\d+)\s*동\s*(\d+)\s*호?/);
+    const nums=text.match(/\d+/g);
+    const words=text.trim().split(/\s+/); // ➕ 추가: 숫자 패턴이 없으면 한글 등 단어 단위로 앞=동, 뒤=호 로 나눔(예: "관리동 기타")
+    if(m){ document.getElementById('f-dong').value=m[1]; document.getElementById('f-ho').value=m[2]; }
+    else if(nums&&nums.length>=2){ document.getElementById('f-dong').value=nums[0]; document.getElementById('f-ho').value=nums[1]; }
+    else if(words.length>=2){ document.getElementById('f-dong').value=words[0]; document.getElementById('f-ho').value=words.slice(1).join(' '); }
+    else { showToast('"303 704"또는 "관리동 기타"처럼 두 단어를 말씀해주세요','warn'); return; }
+    updateFname();
+  } else if(field==='defect'){
+    document.getElementById('f-'+field).value=text;
+    updateFname();
+  } else if(field==='quantity'){
+    document.getElementById('f-quantity').value=koreanNumToDigit(text); // ✏️ 변경: "한개/두개" 등 한글 숫자를 아라비아 숫자로 강제 변환
+    updateFname();
+  }
+  showToast('✅ "'+text+'" 입력됨');
+}
+function clearFields(){
+  ['receipt','complex','dong','ho','worktype','location','defect','quantity','formula'].forEach(f=>{
+    const i=document.getElementById('f-'+f);
+    if(i) i.value='';
+  });
+  A.currentStage='';
+  ['before','during','after','check'].forEach(k=>{ const b=document.getElementById('sb-'+k); if(b) b.className='sb'; });
+  updateFname(); showToast('초기화');
+}
+
+// ════════════════════════
+//  드라이브
+// ════════════════════════
+function setBadge(t,tx){ const el=document.getElementById('drive-badge'); el.className='drive-badge '+(t||''); el.textContent=tx; }
+function updateDriveBadge(){ setBadge(document.getElementById('s-url').value?'ok':'', document.getElementById('s-url').value?'드라이브 연결됨':'드라이브 미연결'); }
+async function testConn(){
+  const url=document.getElementById('s-url').value.trim(), fol=document.getElementById('s-folder').value.trim();
+  if(!url||!fol){showToast('URL과 폴더 ID 입력','warn');return;}
+  document.getElementById('test-btn').textContent='⏳';
+  try{ // ✏️ 변경: GET '?ping=1'(doGet 없어서 항상 실패) → POST {action:'ping'}으로 변경
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'ping'})});
+    const json=await res.json();
+    if(json.status==='ok'){ setBadge('ok','드라이브 연결됨'); showToast('✅ 연결 성공'); }
+    else{ setBadge('fail','연결 실패'); showToast('연결 실패','err'); }
+  }
+  catch(e){ setBadge('fail','연결 실패'); showToast('연결 실패','err'); }
+  document.getElementById('test-btn').textContent='🔗';
+}
+
+// ════════════════════════
+//  설정 저장
+// ════════════════════════
+function saveSet(){
+  try{ localStorage.setItem('fb4_cfg',JSON.stringify({
+    url:document.getElementById('s-url').value,
+    folder:document.getElementById('s-folder').value,
+    org:document.getElementById('s-org').value,
+    projectname:document.getElementById('s-projectname').value,
+    contractor:document.getElementById('s-contractor').value,
+    worker:document.getElementById('s-worker').value,
+    manager:document.getElementById('s-manager').value,
+  })); }catch(e){}
+  updateDriveBadge(); updateFname();
+}
+function saveAll(){
+  try{ localStorage.setItem('fb4_jobs',JSON.stringify(A.jobs)); }catch(e){}
+}
+
+// ════════════════════════
+//  목록 관리 (단지명/공종/위치/하자내용)
+// ════════════════════════
+function addListItem(key){
+  const input=document.getElementById('nl-'+key);
+  const val=input.value.trim();
+  if(!val) return;
+  if(!A.lists[key].includes(val)) A.lists[key].push(val);
+  input.value='';
+  saveLists(); renderLists();
+}
+function removeListItem(key,val){
+  A.lists[key]=A.lists[key].filter(v=>v!==val);
+  saveLists(); renderLists();
+}
+function saveLists(){
+  try{ localStorage.setItem('fb4_lists',JSON.stringify(A.lists)); }catch(e){}
+}
+function renderLists(){
+  ['complex','worktype','location','defect'].forEach(key=>{
+    document.getElementById('chips-'+key).innerHTML = A.lists[key].map(v=>
+      `<div class="chip">${v}<button onclick="removeListItem('${key}','${v.replace(/'/g,"\\'")}')">✕</button></div>`
+    ).join('');
+  });
+}
+
+// ════════════════════════
+//  목록 드롭다운 (촬영 탭에서 탭하면 펼쳐짐)
+// ════════════════════════
+function toggleDropdown(key){
+  const panel=document.getElementById('dd-'+key);
+  const wasOpen=panel.classList.contains('show');
+  closeAllDropdowns();
+  if(wasOpen) return;
+  panel.innerHTML = A.lists[key].length
+    ? A.lists[key].map(v=>`<div class="dd-item" onclick="selectDropdownItem('${key}','${v.replace(/'/g,"\\'")}')">${v}</div>`).join('')
+    : '<div class="dd-empty">설정 &gt; 목록 관리에서 항목을 추가하세요</div>';
+  panel.classList.add('show');
+}
+function selectDropdownItem(key,val){
+  document.getElementById('f-'+key).value=val;
+  closeAllDropdowns();
+  updateFname();
+}
+function closeAllDropdowns(){
+  document.querySelectorAll('.dd-panel').forEach(p=>p.classList.remove('show'));
+}
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.dd-toggle') && !e.target.closest('.dd-panel')) closeAllDropdowns();
+});
+function loadAll(){
+  try{
+    const c=JSON.parse(localStorage.getItem('fb4_cfg')||'{}');
+    if(c.url) document.getElementById('s-url').value=c.url;
+    if(c.folder) document.getElementById('s-folder').value=c.folder;
+    if(c.org) document.getElementById('s-org').value=c.org;
+    if(c.projectname) document.getElementById('s-projectname').value=c.projectname;
+    if(c.contractor) document.getElementById('s-contractor').value=c.contractor;
+    if(c.worker) document.getElementById('s-worker').value=c.worker;
+    if(c.manager) document.getElementById('s-manager').value=c.manager;
+    A.jobs=JSON.parse(localStorage.getItem('fb4_jobs')||'[]');
+    migrateJobs(); // ➕ 추가: 예전 데이터(단지+동+호+공종 키, 단계당 1장 객체)를 새 구조(접수번호 키, 배열)로 변환
+    const savedLists=JSON.parse(localStorage.getItem('fb4_lists')||'{}');
+    ['complex','worktype','location','defect'].forEach(k=>{ A.lists[k]=savedLists[k]||[]; });
+  }catch(e){}
+  renderLists();
+}
+function migrateJobs(){
+  A.jobs.forEach(job=>{
+    job.key = makeJobKey(job.receipt); // 키 기준을 접수번호로 재계산(접수번호 같은 작업끼리 다시 묶이게)
+    STAGES.forEach(s=>{
+      if(job.shots[s] && !Array.isArray(job.shots[s])){
+        job.shots[s] = [{ ...job.shots[s], id:null }]; // 이전엔 이미지 자체를 저장 안 했어서 id=null(뷰어에서는 빈 화면)
+      }
+    });
+  });
+  saveAll();
+}
+function copyCode(){ navigator.clipboard.writeText(document.getElementById('gas-code').textContent).then(()=>showToast('📋 코드 복사됨')).catch(()=>showToast('직접 선택해서 복사','warn')); }
+
+// ════════════════════════
+//  유틸
+// ════════════════════════
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+</script>
+</body>
+</html>

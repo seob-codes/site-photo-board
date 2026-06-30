@@ -1,0 +1,137 @@
+<svg viewBox="0 0 1100 700" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>완료확인서 양식 레이아웃 안내도</title>
+<desc>drawCertificate()가 그리는 완료확인서 이미지 양식의 줄 구성과 실제 y좌표(node로 직접 계산해 검증한 값, 제목 y=150 기준)를 보여주는 안내 그림</desc>
+<rect width="1100" height="700" fill="#0f1117"/>
+
+<!-- 종이(양식) 모형 -->
+<g transform="translate(50,40)">
+  <rect x="0" y="0" width="300" height="424" fill="#ffffff" stroke="#2a2f45"/>
+
+  <!-- 좌우(가로) 여백 표시 — margin=60px가 종이 양쪽에 동일 -->
+  <line x1="0" y1="-10" x2="18" y2="-10" stroke="#27ae60" stroke-width="1.2"/>
+  <text x="2" y="-13" font-family="sans-serif" font-size="6" fill="#27ae60">좌 60px</text>
+  <line x1="282" y1="-10" x2="300" y2="-10" stroke="#27ae60" stroke-width="1.2"/>
+  <text x="262" y="-13" font-family="sans-serif" font-size="6" fill="#27ae60">우 60px</text>
+  <text x="120" y="-3" font-family="sans-serif" font-size="6" fill="#27ae60">(좌우 여백은 코드상 동일)</text>
+
+  <!-- 제목 -->
+  <text x="150" y="45" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#000">공 사 완 료 확 인 서</text>
+  <line x1="-12" y1="45" x2="312" y2="45" stroke="#c0392b" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="304" y="42" font-family="sans-serif" font-size="6.5" fill="#e74c3c">y=150 (제목) ← 최근 변경(120→150)</text>
+  <line x1="-12" y1="63" x2="312" y2="63" stroke="#4f8ef7" stroke-width="0.6" stroke-dasharray="2,2"/>
+  <text x="304" y="61" font-family="sans-serif" font-size="6.5" fill="#4f8ef7">y=210 (표 시작)</text>
+
+  <!-- 표 행들 -->
+  <g font-family="sans-serif" font-size="7">
+    <rect x="18" y="63" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="63" width="216" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="74" text-anchor="middle" fill="#000">공사명</text>
+
+    <rect x="18" y="81" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="81" width="216" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="92" text-anchor="middle" fill="#000">보수업체</text>
+
+    <rect x="18" y="99" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="99" width="216" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="110" text-anchor="middle" fill="#000">접수번호</text>
+
+    <rect x="18" y="117" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="117" width="216" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="128" text-anchor="middle" fill="#000">단지명(동,호)</text>
+
+    <rect x="18" y="135" width="48" height="39" fill="#eee" stroke="#000"/>
+    <rect x="66" y="135" width="216" height="39" fill="#fff" stroke="#000"/>
+    <text x="42" y="157" text-anchor="middle" fill="#000">접수내용</text>
+
+    <rect x="18" y="174" width="48" height="39" fill="#eee" stroke="#000"/>
+    <rect x="66" y="174" width="216" height="39" fill="#fff" stroke="#000"/>
+    <text x="42" y="196" text-anchor="middle" fill="#000">보수내용</text>
+
+    <rect x="18" y="213" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="213" width="216" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="224" text-anchor="middle" fill="#000">보수완료일</text>
+
+    <rect x="18" y="231" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="66" y="231" width="84" height="18" fill="#fff" stroke="#000"/>
+    <rect x="150" y="231" width="48" height="18" fill="#eee" stroke="#000"/>
+    <rect x="198" y="231" width="84" height="18" fill="#fff" stroke="#000"/>
+    <text x="42" y="242" text-anchor="middle" fill="#000">작업자</text>
+    <text x="174" y="242" text-anchor="middle" fill="#000">현장대리인</text>
+    <ellipse cx="266" cy="240" rx="4.2" ry="6.6" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+  </g>
+
+  <!-- ✏️ 변경: 확인문구를 890→910으로 추가로 내려서, 날짜/확인자 두 줄도 같이 +20 이동(mock 273, 291) -->
+  <text x="150" y="273" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="#000">상기 접수내용 및 보수내용대로 보수공사를 완료하였음을 확인합니다.</text>
+  <text x="150" y="291" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#000">2026년 6월 25일</text>
+
+  <!-- 확인자(입주자) y=1040→mock312, (관리소) y=1120→mock336 -->
+  <g font-family="sans-serif" font-size="7" fill="#000">
+    <text x="195" y="312">확인자(입주자) :</text>
+    <text x="246" y="312" fill="#888">(이름)</text>
+    <text x="282" y="312" text-anchor="end">(인)</text>
+    <text x="195" y="336">확인자(관리소) :</text>
+    <text x="246" y="336" fill="#888">(이름)</text>
+    <text x="282" y="336" text-anchor="end">(인)</text>
+  </g>
+  <line x1="282" y1="300" x2="282" y2="348" stroke="#e74c3c" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="262" y="298" font-family="sans-serif" font-size="6" fill="#e74c3c">표 끝선=(인) 끝선</text>
+
+  <!-- 위/아래(세로) 여백 표시 -->
+  <line x1="-30" y1="0" x2="-30" y2="45" stroke="#e67e22" stroke-width="1.2"/>
+  <text x="-46" y="25" font-family="sans-serif" font-size="6" fill="#e67e22">위≈99</text>
+  <line x1="-30" y1="336" x2="-30" y2="424" stroke="#e67e22" stroke-width="1.2"/>
+  <text x="-46" y="382" font-family="sans-serif" font-size="6" fill="#e67e22">아래≈294</text>
+
+  <!-- 오른쪽 좌표 자(룰러) — node로 직접 계산해 검증한 실제 y값(제목 y=150 기준 전체 +30) -->
+  <g font-family="sans-serif" font-size="6.5" fill="#888">
+    <line x1="300" y1="0" x2="300" y2="424" stroke="#888" stroke-width="0.5"/>
+    <line x1="300" y1="81" x2="306" y2="81" stroke="#888" stroke-width="0.5"/><text x="309" y="83">y=270 공사명↔보수업체</text>
+    <line x1="300" y1="99" x2="306" y2="99" stroke="#888" stroke-width="0.5"/><text x="309" y="101">y=330 보수업체↔접수번호</text>
+    <line x1="300" y1="117" x2="306" y2="117" stroke="#888" stroke-width="0.5"/><text x="309" y="119">y=390 접수번호↔단지명</text>
+    <line x1="300" y1="135" x2="306" y2="135" stroke="#888" stroke-width="0.5"/><text x="309" y="137">y=450 단지명↔접수내용</text>
+    <line x1="300" y1="174" x2="306" y2="174" stroke="#888" stroke-width="0.5"/><text x="309" y="176">y=580 접수내용↔보수내용</text>
+    <line x1="300" y1="213" x2="306" y2="213" stroke="#888" stroke-width="0.5"/><text x="309" y="215">y=710 보수내용↔보수완료일</text>
+    <line x1="300" y1="231" x2="306" y2="231" stroke="#888" stroke-width="0.5"/><text x="309" y="233">y=770 보수완료일↔작업자줄</text>
+    <line x1="300" y1="240" x2="306" y2="240" stroke="#c0392b" stroke-width="0.5"/><text x="309" y="242" fill="#e74c3c">y=800 도장 중심</text>
+    <line x1="300" y1="249" x2="306" y2="249" stroke="#888" stroke-width="0.5"/><text x="309" y="251">y=830 작업자줄 끝</text>
+    <line x1="300" y1="273" x2="306" y2="273" stroke="#c0392b" stroke-width="0.5"/><text x="309" y="275" fill="#e74c3c">y=910 확인문구 ← 최근 변경(890→910)</text>
+    <line x1="300" y1="291" x2="306" y2="291" stroke="#c0392b" stroke-width="0.5"/><text x="309" y="293" fill="#e74c3c">y=970 날짜</text>
+    <line x1="300" y1="312" x2="306" y2="312" stroke="#c0392b" stroke-width="0.5"/><text x="309" y="314" fill="#e74c3c">y=1040 확인자(입주자)</text>
+    <line x1="300" y1="336" x2="306" y2="336" stroke="#c0392b" stroke-width="0.5"/><text x="309" y="338" fill="#e74c3c">y=1120 확인자(관리소)</text>
+    <line x1="300" y1="424" x2="306" y2="424" stroke="#888" stroke-width="0.5"/><text x="309" y="426">y=1414 종이 끝</text>
+  </g>
+</g>
+
+<!-- 콜아웃: 표 7줄 -->
+<line x1="455" y1="130" x2="640" y2="80" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="640" y="44" width="420" height="92" rx="8" fill="#181c2c" stroke="#2a2f45"/>
+<text x="656" y="64" font-size="13" fill="#e8eaf2" font-family="sans-serif" font-weight="700">표 7줄 (공사명~보수완료일)</text>
+<text x="656" y="84" font-size="11" fill="#9aa3c0" font-family="sans-serif">공사명/보수업체/접수번호/단지명/보수완료일/작업자줄 = 높이 60</text>
+<text x="656" y="100" font-size="11" fill="#9aa3c0" font-family="sans-serif">접수내용/보수내용 = 높이 130</text>
+<text x="656" y="116" font-size="11" fill="#9aa3c0" font-family="sans-serif">접수번호·단지명(동,호)·보수완료일(오늘 날짜)은 자동 채움</text>
+
+<!-- 콜아웃: 작업자/현장대리인 + 도장 -->
+<line x1="455" y1="246" x2="640" y2="220" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="640" y="178" width="420" height="92" rx="8" fill="#181c2c" stroke="#2a2f45"/>
+<text x="656" y="198" font-size="13" fill="#e8eaf2" font-family="sans-serif" font-weight="700">작업자 / 현장대리인 (높이 60, y=770~830)</text>
+<text x="656" y="218" font-size="11" fill="#9aa3c0" font-family="sans-serif">둘 다 설정 탭 값. 현장대리인 이름 옆 "(인)" 글자 위에는</text>
+<text x="656" y="234" font-size="11" fill="#9aa3c0" font-family="sans-serif">빨간 세로형 타원 도장(drawVerticalStamp)이 겹쳐 그려짐</text>
+<text x="656" y="250" font-size="11" fill="#9aa3c0" font-family="sans-serif">도장 x좌표는 이름 길이를 측정해 동적으로 계산됨</text>
+
+<!-- 콜아웃: 확인 문구/날짜 -->
+<line x1="455" y1="276" x2="640" y2="300" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="640" y="296" width="420" height="60" rx="8" fill="#181c2c" stroke="#2a2f45"/>
+<text x="656" y="316" font-size="13" fill="#e8eaf2" font-family="sans-serif" font-weight="700">확인 문구 + 보수완료일 날짜 (y=910, 970)</text>
+<text x="656" y="336" font-size="11" fill="#9aa3c0" font-family="sans-serif">고정 문구 1줄 + 오늘 날짜(년/월/일) 1줄</text>
+
+<!-- 콜아웃: 확인자(입주자)/(관리소) -->
+<line x1="455" y1="318" x2="640" y2="380" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="640" y="376" width="420" height="106" rx="8" fill="#181c2c" stroke="#2a2f45"/>
+<text x="656" y="396" font-size="13" fill="#e8eaf2" font-family="sans-serif" font-weight="700">확인자(입주자) y=1040 / (관리소) y=1120</text>
+<text x="656" y="416" font-size="11" fill="#9aa3c0" font-family="sans-serif">cert-modal의 "✍️ 서명" 버튼으로 입력한</text>
+<text x="656" y="432" font-size="11" fill="#9aa3c0" font-family="sans-serif">이름이 (이름) 자리에, 그림 서명이 "(인)" 자리에 겹쳐 합성</text>
+<text x="656" y="448" font-size="11" fill="#9aa3c0" font-family="sans-serif">줄 전체가 우측 정렬, "(인)" 끝은 표 끝선(940)에 맞춤</text>
+<text x="656" y="464" font-size="11" fill="#9aa3c0" font-family="sans-serif">관리소 줄은 입주자 줄보다 80px 아래</text>
+
+<text x="50" y="500" font-family="sans-serif" font-size="11" fill="#6a7290">※ 실제 캔버스 크기는 1000×1414px(A4 비율). 제목을 120→150으로 내려서 이후 모든 줄이 +30 같이 이동했습니다(node로 직접 계산해 검증, 빨간색 = 이번에 바뀐 부분).</text>
+</svg>

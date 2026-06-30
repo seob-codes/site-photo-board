@@ -1,0 +1,58 @@
+SHEET: 빈양식-공통 A1:AJ27
+A1 1
+B1 2
+C1 3
+D1 4
+E1 5
+F1 6
+G1 7
+H1 8
+I1 9
+J1 10
+K1 11
+L1 12
+M1 13
+N1 14
+O1 15
+P1 16
+Q1 17
+R1 18
+S1 19
+T1 20
+U1 21
+V1 22
+W1 23
+X1 24
+Y1 25
+Z1 26
+AA1 27
+AB1 28
+AC1 29
+AD1 30
+AE1 31
+AF1 32
+AG1 33
+AH1 34
+AI1 35
+AJ1 36
+A2 '공 사 완 료  확 인 서'
+A4 '□  공 사 명  :'
+C4 'LHQ+ 파주1권 건설임대주택 유지보수공사 [건축]'
+A5 '□  보수 업체 :'
+C5 '(주)신영씨앤디 / (주)지용종합건설'
+B6 '접  수  번  호'
+B7 '단지명 (동,호)'
+B8 '접  수  내  용'
+B12 '보  수  내  용'
+B16 '보수완료일'
+C16 '2026년       월       일'
+B17 '작  업   자'
+E17 '현장대리인'
+G17 '김   태  섭     (인)'
+B19 '상기 접수내용 및 보수내용대로 보수공사를 완료하였음을 확인합니다.'
+B21 '2026년       월       일'
+C23 '확인자(입주자)  :'
+E23 '(인)'
+C24 '확인자(관리소)  :'
+E24 '(인)'
+merged: {<MergedCellRange G17:G18>, <MergedCellRange C24:D24>, <MergedCellRange C6:G6>, <MergedCellRange B12:B15>, <MergedCellRange B17:B18>, <MergedCellRange C12:G15>, <MergedCellRange C7:F7>, <MergedCellRange C5:G5>, <MergedCellRange C17:D18>, <MergedCellRange C8:G11>, <MergedCellRange C4:G4>, <MergedCellRange B8:B11>, <MergedCellRange C16:G16>, <MergedCellRange A2:H2>, <MergedCellRange A5:B5>, <MergedCellRange B26:G26>, <MergedCellRange C23:D23>, <MergedCellRange E17:F18>, <MergedCellRange A4:B4>, <MergedCellRange E24:G24>, <MergedCellRange E23:G23>, <MergedCellRange B21:G21>}

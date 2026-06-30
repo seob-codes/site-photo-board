@@ -1,0 +1,70 @@
+<svg viewBox="0 0 820 620" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>작업목록 탭 안내도</title>
+<desc>현장보드판 앱 작업목록 탭의 필터, 작업 카드, 도트, 버튼 이름을 보여주는 안내 그림</desc>
+<rect width="820" height="620" fill="#0f1117"/>
+
+<!-- 상단 필터 모형 -->
+<text x="40" y="50" font-family="sans-serif" font-size="16" font-weight="700" fill="#e8eaf2">작업 목록</text>
+<rect x="40" y="64" width="70" height="28" rx="14" fill="#1f2840" stroke="#4f8ef7"/>
+<text x="75" y="83" font-size="12" text-anchor="middle" fill="#e8eaf2" font-family="sans-serif">진행중</text>
+<rect x="116" y="64" width="70" height="28" rx="14" fill="#181c2c" stroke="#2a2f45"/>
+<text x="151" y="83" font-size="12" text-anchor="middle" fill="#9aa3c0" font-family="sans-serif">완료</text>
+<rect x="700" y="64" width="60" height="28" rx="14" fill="#181c2c" stroke="#2a2f45"/>
+<text x="730" y="83" font-size="12" text-anchor="middle" fill="#9aa3c0" font-family="sans-serif">3건</text>
+
+<!-- 작업 카드 모형 -->
+<rect x="40" y="120" width="500" height="260" rx="14" fill="#181c2c" stroke="#2a2f45"/>
+<text x="60" y="150" font-family="sans-serif" font-size="15" font-weight="700" fill="#e8eaf2">도배공사</text>
+<text x="60" y="170" font-family="sans-serif" font-size="12" fill="#9aa3c0">문산당동3 303동 704호</text>
+<text x="60" y="188" font-family="sans-serif" font-size="11" fill="#666f8f">5분 전 마지막 촬영</text>
+<text x="480" y="150" font-size="16" text-anchor="middle">📤</text>
+<text x="510" y="150" font-size="16" text-anchor="middle">🗑️</text>
+
+<!-- 도트 4개 -->
+<g font-family="sans-serif" text-anchor="middle">
+  <circle cx="100" cy="230" r="18" fill="#4fca87"/><text x="100" y="235" font-size="13" fill="#0f1117">✓</text>
+  <text x="100" y="262" font-size="10" fill="#9aa3c0">전 1장</text>
+  <circle cx="170" cy="230" r="18" fill="#f7a84f"/><text x="170" y="235" font-size="13" fill="#0f1117">▶</text>
+  <text x="170" y="262" font-size="10" fill="#9aa3c0">중</text>
+  <circle cx="240" cy="230" r="18" fill="#262b40" stroke="#3a4060"/><text x="240" y="235" font-size="11" fill="#9aa3c0">후</text>
+  <text x="240" y="262" font-size="10" fill="#666f8f">후</text>
+  <circle cx="310" cy="230" r="18" fill="#262b40" stroke="#3a4060"/><text x="310" y="237" font-size="14">📄</text>
+  <text x="310" y="262" font-size="10" fill="#666f8f">확인서</text>
+</g>
+
+<!-- 액션 버튼 행 -->
+<g font-family="sans-serif" font-size="12" text-anchor="middle">
+  <rect x="60" y="320" width="70" height="32" rx="8" fill="#1f3a2c" stroke="#4fca87"/>
+  <text x="95" y="340" fill="#4fca87">전 ✓</text>
+  <rect x="140" y="320" width="70" height="32" rx="8" fill="#3a2f1a" stroke="#f7a84f"/>
+  <text x="175" y="340" fill="#f7a84f">▶ 중</text>
+  <rect x="220" y="320" width="60" height="32" rx="8" fill="#1f2333" stroke="#3a4060"/>
+  <text x="250" y="340" fill="#9aa3c0">후</text>
+  <rect x="290" y="320" width="80" height="32" rx="8" fill="#1f2333" stroke="#3a4060"/>
+  <text x="330" y="340" fill="#9aa3c0">확인서</text>
+</g>
+
+<!-- 콜아웃들 -->
+<line x1="151" y1="92" x2="151" y2="420" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="420" width="240" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="442" font-size="14" fill="#e8eaf2" font-family="sans-serif">진행중 / 완료 필터</text>
+<text x="54" y="462" font-size="12" fill="#9aa3c0" font-family="sans-serif">완료된 작업은 "완료" 탭에서만 보임</text>
+
+<line x1="495" y1="150" x2="600" y2="420" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="500" y="420" width="280" height="76" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="514" y="442" font-size="14" fill="#e8eaf2" font-family="sans-serif">내보내기(📤) / 삭제(🗑️)</text>
+<text x="514" y="462" font-size="12" fill="#9aa3c0" font-family="sans-serif">📤=공유창으로 사진 전달</text>
+<text x="514" y="480" font-size="12" fill="#9aa3c0" font-family="sans-serif">🗑️=이 작업 카드 전체 삭제</text>
+
+<line x1="170" y1="280" x2="170" y2="520" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="520" width="320" height="76" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="542" font-size="14" fill="#e8eaf2" font-family="sans-serif">진행 도트(전/중/후/확인서)</text>
+<text x="54" y="562" font-size="12" fill="#9aa3c0" font-family="sans-serif">✓=완료(눌러서 사진 보기), ▶=다음 차례</text>
+<text x="54" y="580" font-size="12" fill="#9aa3c0" font-family="sans-serif">눌러서 그 단계 사진들을 넘겨봄</text>
+
+<line x1="330" y1="352" x2="450" y2="520" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="400" y="520" width="320" height="76" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="414" y="542" font-size="14" fill="#e8eaf2" font-family="sans-serif">액션 버튼 행</text>
+<text x="414" y="562" font-size="12" fill="#9aa3c0" font-family="sans-serif">도트와 달리 항상 "그 단계 새로 촬영하러 가기"</text>
+<text x="414" y="580" font-size="12" fill="#9aa3c0" font-family="sans-serif">▶ 표시 = 지금 찍어야 할 다음 단계</text>
+</svg>

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:seob-codes.github.io)",
+      "Bash(node -e ' *)",
+      "Bash(node --check _check.js)",
+      "Bash(rm _check.js)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(node -e \"new Function\\(require\\('fs'\\).readFileSync\\('fieldboard-v4.html','utf8'\\).match\\(/<script>\\([\\\\s\\\\S]*\\)<\\\\/script>/\\)[1]\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c \"import openpyxl; print\\('ok'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(python -c \"import PIL; print\\('ok'\\)\")",
+      "WebSearch",
+      "Bash(mkdir -p ~/.claude/skills)",
+      "Bash(cp -r /tmp/hwpxskill ~/.claude/skills/hwpxskill)",
+      "Bash(rm -rf ~/.claude/skills/hwpxskill/.git)",
+      "Read(//c/Users/HP-PA/.claude/skills/**)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const html=fs.readFileSync\\('fieldboard-v4.html','utf8'\\);const m=html.match\\(/<script>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\);m.forEach\\(\\(s,i\\)=>{const code=s.replace\\(/<\\\\/?script>/g,''\\);try{new Function\\(code\\);}catch\\(e\\){console.log\\('script',i,'ERROR:',e.message\\);}}\\);console.log\\('done',m.length,'scripts checked'\\);\")",
+      "Bash(node -e 'const fs=require\\('\\\\''fs'\\\\''\\);const html=fs.readFileSync\\('\\\\''fieldboard-v4.html'\\\\'','\\\\''utf8'\\\\''\\);const m=html.match\\(/<script>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\);m.forEach\\(\\(s,i\\)=>{const code=s.replace\\(/<\\\\/?script>/g,'\\\\'''\\\\''\\);try{new Function\\(code\\);}catch\\(e\\){console.log\\('\\\\''ERROR:'\\\\'',e.message\\);}}\\);console.log\\('\\\\''syntax ok'\\\\''\\); *)",
+      "Bash(node -e 'const fs=require\\('\\\\''fs'\\\\''\\);const html=fs.readFileSync\\('\\\\''fieldboard-v4.html'\\\\'','\\\\''utf8'\\\\''\\);const m=html.match\\(/<script>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\);m.forEach\\(\\(s\\)=>{const code=s.replace\\(/<\\\\/?script>/g,'\\\\'''\\\\''\\);try{new Function\\(code\\);}catch\\(e\\){console.log\\('\\\\''ERROR:'\\\\'',e.message\\);}}\\);console.log\\('\\\\''syntax ok'\\\\''\\); *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const html=fs.readFileSync\\('fieldboard-v4.html','utf8'\\);const m=html.match\\(/<script>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\);m.forEach\\(\\(s\\)=>{const code=s.replace\\(/<\\\\/?script>/g,''\\);try{new Function\\(code\\);}catch\\(e\\){console.log\\('ERROR:',e.message\\);}}\\);console.log\\('syntax ok'\\);\")"
+    ]
+  }
+}

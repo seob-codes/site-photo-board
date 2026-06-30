@@ -1,0 +1,52 @@
+<svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>완료확인서 미리보기 화면 안내도</title>
+<desc>촬영 탭에서 "📄" 버튼을 누르면 뜨는 완료확인서 미리보기 확인창(cert-modal) 구조를 보여주는 안내 그림</desc>
+<rect width="760" height="460" fill="#0f1117"/>
+
+<!-- 확인창 모형 -->
+<rect x="270" y="30" width="280" height="280" rx="14" fill="#181c2c" stroke="#2a2f45"/>
+<text x="410" y="58" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#e8eaf2">완료확인서를 저장하시겠습니까?</text>
+
+<!-- 이미지 미리보기 영역 -->
+<rect x="290" y="70" width="240" height="120" rx="6" fill="#0f1117" stroke="#3a4060"/>
+<text x="410" y="135" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6a7290">완료확인서 이미지 미리보기</text>
+
+<!-- 파일명 표시 -->
+<rect x="290" y="198" width="240" height="22" rx="4" fill="#1c2236"/>
+<text x="410" y="213" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#9aa3c0">접수번호_단지명_동_호_완료확인서_001</text>
+
+<!-- 서명 버튼 2개 -->
+<g font-family="sans-serif" font-size="11">
+  <rect x="290" y="228" width="115" height="32" rx="8" fill="#1f2840" stroke="#3a4060"/>
+  <text x="347" y="248" text-anchor="middle" fill="#e8eaf2">✍️ 입주자 서명</text>
+  <rect x="415" y="228" width="115" height="32" rx="8" fill="#1f2840" stroke="#3a4060"/>
+  <text x="472" y="248" text-anchor="middle" fill="#e8eaf2">✍️ 관리소 서명</text>
+</g>
+
+<!-- 돌아가기/저장 버튼 -->
+<g font-family="sans-serif" font-size="12" font-weight="600">
+  <rect x="290" y="266" width="115" height="32" rx="8" fill="#181c2c" stroke="#2a2f45"/>
+  <text x="347" y="287" text-anchor="middle" fill="#9aa3c0">돌아가기</text>
+  <rect x="415" y="266" width="115" height="32" rx="8" fill="#4f8ef7"/>
+  <text x="472" y="287" text-anchor="middle" fill="#0f1117">저장</text>
+</g>
+
+<!-- 콜아웃: 미리보기 이미지 -->
+<line x1="410" y1="130" x2="180" y2="350" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="40" y="350" width="280" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="54" y="372" font-size="14" fill="#e8eaf2" font-family="sans-serif">확인서 이미지 미리보기</text>
+<text x="54" y="392" font-size="12" fill="#9aa3c0" font-family="sans-serif">실제 양식 그대로 Canvas로 그려서 보여줌</text>
+
+<!-- 콜아웃: 서명 버튼 -->
+<line x1="410" y1="244" x2="410" y2="350" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="330" y="350" width="280" height="56" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="344" y="372" font-size="14" fill="#e8eaf2" font-family="sans-serif">입주자/관리소 서명 버튼</text>
+<text x="344" y="392" font-size="12" fill="#9aa3c0" font-family="sans-serif">눌러서 이름+그림 서명 입력, 둘 다/하나만 가능</text>
+
+<!-- 콜아웃: 저장/돌아가기 -->
+<line x1="472" y1="282" x2="640" y2="350" stroke="#3a4060" stroke-width="1.5"/>
+<rect x="500" y="350" width="220" height="76" rx="8" fill="#0f1117" stroke="#2a2f45"/>
+<text x="514" y="372" font-size="14" fill="#e8eaf2" font-family="sans-serif">돌아가기 / 저장</text>
+<text x="514" y="392" font-size="12" fill="#9aa3c0" font-family="sans-serif">돌아가기=취소, 저장=갤러리+</text>
+<text x="514" y="408" font-size="12" fill="#9aa3c0" font-family="sans-serif">IndexedDB+작업목록에 기록</text>
+</svg>
